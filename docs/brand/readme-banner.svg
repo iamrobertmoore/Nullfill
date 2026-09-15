@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 260" width="1200" height="260"
+     role="img" aria-labelledby="banner-title banner-desc">
+  <title id="banner-title">Nullfill</title>
+  <desc id="banner-desc">The Nullfill name and mark, with the line "Settlement that stays correct when a transaction never happens", beside a list of the four states a settlement attempt can end in: settled, failed, screened, and no trace. Screened and no trace both leave nothing on chain.</desc>
+
+  <style>
+    .bt  { font: 500 15px ui-sans-serif, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
+    .bd  { font: 400 13.5px ui-sans-serif, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; fill: #8A867D; }
+  </style>
+
+  <rect width="1200" height="260" fill="#FAFAF8"/>
+
+  <g transform="translate(64,62)">
+    <rect width="76" height="76" rx="19" fill="#16443C"/>
+    <circle cx="38" cy="38" r="18.05" fill="none" stroke="#FAFAF8" stroke-width="7.1"
+            stroke-dasharray="83 30.4" stroke-linecap="round"/>
+    <circle cx="50.8" cy="25.2" r="7.4" fill="#C2601F"/>
+  </g>
+
+  <text x="164" y="112" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif"
+        font-size="46" font-weight="600" letter-spacing="-0.03em" fill="#12161B">Nullfill</text>
+
+  <text x="164" y="153" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif"
+        font-size="21" fill="#3D444D">Settlement that stays correct</text>
+  <text x="164" y="181" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif"
+        font-size="21" fill="#3D444D">when a transaction never happens</text>
+
+  <rect x="700" y="24" width="436" height="44" rx="10" fill="#E8F3EC" stroke="#1F7A4D" stroke-width="1"/>
+  <circle cx="722" cy="46" r="4" fill="#1F7A4D"/>
+  <text class="bt" x="738" y="51" fill="#1F7A4D">Settled</text>
+  <text class="bd" x="1120" y="51" text-anchor="end">receipt, events, gas spent</text>
+
+  <rect x="700" y="80" width="436" height="44" rx="10" fill="#FDF3E3" stroke="#BA7517" stroke-width="1"/>
+  <circle cx="722" cy="102" r="4" fill="#8A5A11"/>
+  <text class="bt" x="738" y="107" fill="#8A5A11">Failed</text>
+  <text class="bd" x="1120" y="107" text-anchor="end">receipt, no logs, gas spent</text>
+
+  <rect x="700" y="136" width="436" height="44" rx="10" fill="#FBE9E6" stroke="#B23A2E" stroke-width="1"/>
+  <circle cx="722" cy="158" r="4" fill="#B23A2E"/>
+  <text class="bt" x="738" y="163" fill="#B23A2E">Screened</text>
+  <text class="bd" x="1120" y="163" text-anchor="end">no trace, no gas</text>
+
+  <rect x="700" y="192" width="436" height="44" rx="10" fill="#FBE9E6" stroke="#B23A2E" stroke-width="1"/>
+  <circle cx="722" cy="214" r="4" fill="#B23A2E"/>
+  <text class="bt" x="738" y="219" fill="#B23A2E">No trace</text>
+  <text class="bd" x="1120" y="219" text-anchor="end">no trace, no gas</text>
+</svg>

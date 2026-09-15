@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512"
+     role="img" aria-label="Nullfill">
+  <title>Nullfill app icon</title>
+  <desc>A deep pine rounded square containing a ring with one gap, and a filled dot sitting in the gap.</desc>
+  <rect width="512" height="512" rx="114" fill="#16443C"/>
+  <circle cx="256" cy="256" r="121.6" fill="none" stroke="#FAFAF8" stroke-width="48"
+          stroke-dasharray="560 204" stroke-linecap="round"/>
+  <circle cx="342" cy="170" r="49.6" fill="#C2601F"/>
+</svg>
