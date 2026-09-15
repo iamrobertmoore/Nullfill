@@ -1,0 +1,10 @@
+{
+  "name": "nullfill-console",
+  "private": true,
+  "type": "module",
+  "description": "Static settlement console. No build step, no dependencies.",
+  "scripts": {
+    "test": "node --test",
+    "serve": "python3 -m http.server 8080"
+  }
+}
