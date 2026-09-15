@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 600" width="1040" height="600"
+     role="img" aria-labelledby="arch-title arch-desc">
+  <title id="arch-title">Nullfill architecture</title>
+  <desc id="arch-desc">Three addresses on the left name the roles in an order. A Nullfill escrow on Robinhood Chain holds the tokens. Two routes lead into it, the sequencer with its compliance filter and the delayed inbox with the Transaction Guardian. Off chain, a monitor classifies every attempt and a console shows the state. Every settlement attempt ends in one of four states: settled, failed, screened, or no trace.</desc>
+
+  <style>
+    .t  { font: 500 14px ui-sans-serif, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; fill: #12161B; }
+    .s  { font: 400 12.5px ui-sans-serif, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; fill: #6E6A62; }
+    .h  { font: 500 12px ui-sans-serif, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; fill: #8A867D; letter-spacing: 0.08em; }
+    .box { fill: #FFFFFF; stroke: #E4E2DC; stroke-width: 1; }
+    .edge { stroke: #B4B0A6; stroke-width: 1.25; fill: none; }
+    .bus { stroke: #CFCCC3; stroke-width: 1; fill: none; }
+  </style>
+
+  <defs>
+    <marker id="head" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
+            orient="auto-start-reverse">
+      <path d="M2 1 L8 5 L2 9" fill="none" stroke="#B4B0A6" stroke-width="1.5"
+            stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <text class="h" x="40" y="46">The three addresses</text>
+
+  <rect class="box" x="40" y="62" width="170" height="64" rx="10"/>
+  <text class="t" x="58" y="88">Funder</text>
+  <text class="s" x="58" y="107">opens the escrow</text>
+
+  <rect class="box" x="40" y="152" width="170" height="64" rx="10"/>
+  <text class="t" x="58" y="178">Beneficiary</text>
+  <text class="s" x="58" y="197">paid on settlement</text>
+
+  <rect class="box" x="40" y="242" width="170" height="64" rx="10"/>
+  <text class="t" x="58" y="268">Recovery address</text>
+  <text class="s" x="58" y="287">paid if it never does</text>
+
+  <rect x="250" y="50" width="380" height="410" rx="20" fill="#F3F2ED" stroke="#CFCCC3" stroke-width="1"/>
+  <text class="h" x="274" y="80">ROBINHOOD CHAIN · ARBOS 61</text>
+
+  <rect x="280" y="100" width="320" height="76" rx="12" fill="#E6EFEC" stroke="#16443C" stroke-width="1"/>
+  <text class="t" x="300" y="130">Nullfill escrow</text>
+  <text class="s" x="300" y="150">holds tokens against a reference</text>
+
+  <rect class="box" x="280" y="200" width="320" height="76" rx="12"/>
+  <text class="t" x="300" y="230">Sequencer, with the compliance filter</text>
+  <text class="s" x="300" y="250">screens before sequencing, so nothing lands</text>
+
+  <rect class="box" x="280" y="300" width="320" height="76" rx="12"/>
+  <text class="t" x="300" y="330">Delayed inbox and Transaction Guardian</text>
+  <text class="s" x="300" y="350">force inclusion, then forcibly failed</text>
+
+  <text class="h" x="670" y="80">OFF CHAIN</text>
+
+  <rect class="box" x="670" y="100" width="330" height="76" rx="12"/>
+  <text class="t" x="690" y="130">Monitor</text>
+  <text class="s" x="690" y="150">classifies every attempt, never trusts one source</text>
+
+  <rect class="box" x="670" y="200" width="330" height="76" rx="12"/>
+  <text class="t" x="690" y="230">Console</text>
+  <text class="s" x="690" y="250">shows the state, offers the unwind</text>
+
+  <rect class="box" x="670" y="300" width="330" height="76" rx="12"/>
+  <text class="t" x="690" y="330">Bridge deposit check</text>
+  <text class="s" x="690" y="350">parent chain in, child chain out</text>
+
+  <path class="edge" d="M210 94 L246 94 L246 122 L276 122" marker-end="url(#head)"/>
+  <path class="edge" d="M210 184 L246 184 L246 138 L276 138" marker-end="url(#head)"/>
+  <path class="edge" d="M210 274 L246 274 L246 154 L276 154" marker-end="url(#head)"/>
+
+  <path class="edge" d="M440 176 L440 196" marker-end="url(#head)"/>
+  <path class="edge" d="M440 276 L440 296" marker-end="url(#head)"/>
+
+  <path class="edge" d="M600 138 L666 138" marker-end="url(#head)"/>
+  <path class="edge" d="M835 176 L835 196" marker-end="url(#head)"/>
+  <path class="edge" d="M600 338 L666 338" marker-end="url(#head)"/>
+
+  <path class="bus" d="M440 460 L440 482 M152 482 L902 482"/>
+  <path class="edge" d="M152 482 L152 496" marker-end="url(#head)"/>
+  <path class="edge" d="M402 482 L402 496" marker-end="url(#head)"/>
+  <path class="edge" d="M652 482 L652 496" marker-end="url(#head)"/>
+  <path class="edge" d="M902 482 L902 496" marker-end="url(#head)"/>
+
+  <rect x="40" y="500" width="225" height="64" rx="10" fill="#E8F3EC" stroke="#1F7A4D" stroke-width="1"/>
+  <text class="t" x="58" y="526" fill="#1F7A4D">Settled</text>
+  <text class="s" x="58" y="545" fill="#1F7A4D">receipt, events, gas spent</text>
+
+  <rect x="290" y="500" width="225" height="64" rx="10" fill="#FDF3E3" stroke="#BA7517" stroke-width="1"/>
+  <text class="t" x="308" y="526" fill="#8A5A11">Failed</text>
+  <text class="s" x="308" y="545" fill="#8A5A11">receipt, no logs, gas spent</text>
+
+  <rect x="540" y="500" width="225" height="64" rx="10" fill="#FBE9E6" stroke="#B23A2E" stroke-width="1"/>
+  <text class="t" x="558" y="526" fill="#B23A2E">Screened</text>
+  <text class="s" x="558" y="545" fill="#B23A2E">nothing at all</text>
+
+  <rect x="790" y="500" width="225" height="64" rx="10" fill="#FBE9E6" stroke="#B23A2E" stroke-width="1"/>
+  <text class="t" x="808" y="526" fill="#B23A2E">No trace</text>
+  <text class="s" x="808" y="545" fill="#B23A2E">nothing at all</text>
+</svg>
