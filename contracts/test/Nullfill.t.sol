@@ -16,6 +16,12 @@ contract StockToken is ERC20 {
     }
 }
 
+/// @dev Note on cheatcode ordering, because this bit me while writing these tests.
+///      `vm.prank` and `vm.expectRevert` apply to the next external call. Solidity evaluates a
+///      function's arguments before making the call, so if an argument expression itself makes an
+///      external call, that call eats the cheatcode and the real call runs unpranked. Reading
+///      `FORCE_INCLUSION_WINDOW()` inline as an argument does exactly this. Every deadline below is
+///      therefore computed into a local first.
 contract NullfillTest is Test {
     Nullfill internal nullfill;
     StockToken internal tsla;
@@ -79,37 +85,38 @@ contract NullfillTest is Test {
 
     function test_Open_RevertsOnDuplicateRef() public {
         _open();
+        uint64 deadline = _earliestDeadline();
 
         vm.prank(funder);
         vm.expectRevert(abi.encodeWithSelector(Nullfill.RefAlreadyUsed.selector, REF));
-        nullfill.open(REF, beneficiary, IERC20(address(tsla)), AMOUNT, _earliestDeadline(), recovery);
+        nullfill.open(REF, beneficiary, IERC20(address(tsla)), AMOUNT, deadline, recovery);
     }
 
     function test_Open_RevertsWhenDeadlineInsideForceInclusionWindow() public {
         uint64 tooSoon = uint64(block.timestamp) + nullfill.FORCE_INCLUSION_WINDOW() - 1;
+        uint64 earliest = uint64(block.timestamp) + nullfill.FORCE_INCLUSION_WINDOW();
 
         vm.prank(funder);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Nullfill.DeadlineTooSoon.selector,
-                uint64(block.timestamp) + nullfill.FORCE_INCLUSION_WINDOW()
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(Nullfill.DeadlineTooSoon.selector, earliest));
         nullfill.open(REF, beneficiary, IERC20(address(tsla)), AMOUNT, tooSoon, recovery);
     }
 
     function test_Open_DefaultsUnwindToFunder() public {
+        uint64 deadline = _earliestDeadline();
+
         vm.prank(funder);
-        nullfill.open(REF, beneficiary, IERC20(address(tsla)), AMOUNT, _earliestDeadline(), address(0));
+        nullfill.open(REF, beneficiary, IERC20(address(tsla)), AMOUNT, deadline, address(0));
 
         Nullfill.Order memory o = nullfill.orderOf(REF);
         assertEq(o.unwindTo, funder, "zero recovery address defaults to the funder");
     }
 
     function test_Open_RevertsOnZeroAmount() public {
+        uint64 deadline = _earliestDeadline();
+
         vm.prank(funder);
         vm.expectRevert(Nullfill.ZeroAmount.selector);
-        nullfill.open(REF, beneficiary, IERC20(address(tsla)), 0, _earliestDeadline(), recovery);
+        nullfill.open(REF, beneficiary, IERC20(address(tsla)), 0, deadline, recovery);
     }
 
     // -------------------------------------------------------------- settle
@@ -213,10 +220,12 @@ contract NullfillTest is Test {
     }
 
     function test_Unwind_DefaultsToFunderWhenNoRecoveryNominated() public {
-        vm.prank(funder);
-        nullfill.open(REF, beneficiary, IERC20(address(tsla)), AMOUNT, _earliestDeadline(), address(0));
+        uint64 deadline = _earliestDeadline();
 
-        vm.warp(_earliestDeadline());
+        vm.prank(funder);
+        nullfill.open(REF, beneficiary, IERC20(address(tsla)), AMOUNT, deadline, address(0));
+
+        vm.warp(deadline);
         vm.prank(stranger);
         nullfill.unwind(REF);
 
@@ -283,14 +292,10 @@ contract NullfillTest is Test {
 
         vm.warp(deadline + 1 days);
         uint64 tooSoon = uint64(block.timestamp) + 1 hours;
+        uint64 earliest = uint64(block.timestamp) + nullfill.FORCE_INCLUSION_WINDOW();
 
         vm.prank(funder);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Nullfill.DeadlineTooSoon.selector,
-                uint64(block.timestamp) + nullfill.FORCE_INCLUSION_WINDOW()
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(Nullfill.DeadlineTooSoon.selector, earliest));
         nullfill.extend(REF, tooSoon);
     }
 
@@ -372,13 +377,14 @@ contract NullfillTest is Test {
         vm.assume(amount > 0);
 
         tsla.mint(funder, amount);
+        uint64 deadline = _earliestDeadline();
 
         vm.prank(funder);
-        nullfill.open(REF, beneficiary, IERC20(address(tsla)), amount, _earliestDeadline(), recovery);
+        nullfill.open(REF, beneficiary, IERC20(address(tsla)), amount, deadline, recovery);
 
         assertEq(tsla.balanceOf(address(nullfill)), amount);
 
-        vm.warp(_earliestDeadline());
+        vm.warp(deadline);
         vm.prank(stranger);
         nullfill.unwind(REF);
 
@@ -394,9 +400,10 @@ contract NullfillTest is Test {
         vm.prank(funder);
         nullfill.open(REF, beneficiary, IERC20(address(tsla)), AMOUNT, deadline, recovery);
 
+        uint64 floor = uint64(block.timestamp) + nullfill.FORCE_INCLUSION_WINDOW();
         assertGe(
             nullfill.orderOf(REF).deadline,
-            uint64(block.timestamp) + nullfill.FORCE_INCLUSION_WINDOW(),
+            floor,
             "no escrow can be unwound before a screened transaction could still arrive"
         );
     }
