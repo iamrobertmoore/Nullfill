@@ -1,0 +1,21 @@
+# Foundry build output
+contracts/out/
+contracts/cache/
+contracts/broadcast/
+
+# Node
+node_modules/
+web/node_modules/
+
+# Local environment
+.env
+.env.local
+.env.*.local
+
+# Editors and OS
+.DS_Store
+.idea/
+.vscode/
+
+# Logs
+*.log
