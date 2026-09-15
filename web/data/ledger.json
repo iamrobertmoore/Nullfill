@@ -1,0 +1,129 @@
+{
+  "recordedAt": "2026-09-15T17:20:00Z",
+  "network": "Robinhood Chain testnet, chain id 46630",
+  "honesty": "This ledger is a recorded scenario, replayed so the console can be read without a wallet. It is not live chain data and the addresses are illustrative. The classifier above does run live against the chain.",
+  "settlements": [
+    {
+      "ref": "0x8f2a…41c7",
+      "route": "Escrow, direct",
+      "outcome": "settled",
+      "asset": "TSLA",
+      "amount": "5.0",
+      "submittedAt": "14:02",
+      "funder": "0x4Ae1…9C22",
+      "beneficiary": "0xB7f0…31Da",
+      "unwindTo": "0x2E44…C108",
+      "deadline": "2026-09-16 14:02",
+      "gasSpent": "0.000041 ETH",
+      "onChainTrace": "Receipt, events, state change",
+      "note": "The ordinary case. Escrow opened, counterparty delivered, escrow released.",
+      "timeline": [
+        { "t": "14:02:11", "kind": "done", "text": "Escrow opened for 5.0 TSLA. Recovery address nominated." },
+        { "t": "14:03:40", "kind": "done", "text": "Counterparty delivered the counter-asset." },
+        { "t": "14:04:02", "kind": "done", "text": "Settled. Tokens released to the beneficiary." }
+      ]
+    },
+    {
+      "ref": "0x77ea…2b30",
+      "route": "Escrow, direct",
+      "outcome": "settled",
+      "asset": "AMZN",
+      "amount": "12.0",
+      "submittedAt": "14:11",
+      "funder": "0x4Ae1…9C22",
+      "beneficiary": "0x91Cc…7B04",
+      "unwindTo": "0x2E44…C108",
+      "deadline": "2026-09-16 14:11",
+      "gasSpent": "0.000038 ETH",
+      "onChainTrace": "Receipt, events, state change",
+      "note": "Same desk, twenty minutes later. Nothing unusual.",
+      "timeline": [
+        { "t": "14:11:09", "kind": "done", "text": "Escrow opened for 12.0 AMZN." },
+        { "t": "14:12:55", "kind": "done", "text": "Settled by the beneficiary." }
+      ]
+    },
+    {
+      "ref": "0x3b91…0de4",
+      "route": "Escrow, direct",
+      "outcome": "pending",
+      "asset": "PLTR",
+      "amount": "40.0",
+      "submittedAt": "14:08",
+      "funder": "0x4Ae1…9C22",
+      "beneficiary": "0xB7f0…31Da",
+      "unwindTo": "0x2E44…C108",
+      "deadline": "2026-09-16 14:08",
+      "gasSpent": "0 wei",
+      "onChainTrace": "Nothing yet",
+      "note": "Inside the force inclusion window. A transaction routed through the delayed inbox can still land, so this is genuinely unknown and must not be unwound.",
+      "timeline": [
+        { "t": "14:08:22", "kind": "done", "text": "Escrow opened for 40.0 PLTR." },
+        { "t": "14:09:02", "kind": "open", "text": "Settlement transaction accepted but not yet sequenced. No receipt." },
+        { "t": "now", "kind": "open", "text": "Window open. Waiting is the correct action, because unwinding now could double settle." }
+      ]
+    },
+    {
+      "ref": "0x5a63…7f21",
+      "route": "Escrow, direct",
+      "outcome": "screened",
+      "asset": "NFLX",
+      "amount": "8.0",
+      "submittedAt": "14:16",
+      "funder": "0x4Ae1…9C22",
+      "beneficiary": "0x91Cc…7B04",
+      "unwindTo": "0x2E44…C108",
+      "deadline": "2026-09-16 14:16",
+      "gasSpent": "0 wei",
+      "onChainTrace": "Nothing at all",
+      "note": "The case this contract exists for. The escrow is untouched and still open. Nothing was spent and nothing is recorded anywhere on chain.",
+      "timeline": [
+        { "t": "14:16:03", "kind": "done", "text": "Escrow opened for 8.0 NFLX." },
+        { "t": "14:16:44", "kind": "missed", "text": "Settlement rejected at the sequencer: Transaction rejected by chain policy." },
+        { "t": "14:16:44", "kind": "missed", "text": "No revert, no receipt, no event, no gas. Nothing to read on chain." },
+        { "t": "next", "kind": "open", "text": "Nominate a clean recovery address while the escrow is still open, then let the window close." }
+      ]
+    },
+    {
+      "ref": "0x1d5c…88af",
+      "route": "Bridge deposit",
+      "outcome": "settled",
+      "asset": "ETH",
+      "amount": "2.0",
+      "submittedAt": "12:19",
+      "funder": "0x4Ae1…9C22",
+      "beneficiary": "0x4Ae1…9C22",
+      "unwindTo": "n/a",
+      "deadline": "n/a",
+      "gasSpent": "n/a",
+      "onChainTrace": "L1 deposit, L2 credit",
+      "note": "A normal bridge deposit. ETH left Ethereum and the credit arrived on Robinhood Chain. This is what should happen.",
+      "timeline": [
+        { "t": "12:19:30", "kind": "done", "text": "2.0 ETH deposited to the parent chain bridge contract." },
+        { "t": "12:21:02", "kind": "done", "text": "Credit landed on Robinhood Chain." }
+      ]
+    },
+    {
+      "ref": "0xc4d0…9a12",
+      "route": "Bridge deposit",
+      "outcome": "no-trace",
+      "asset": "ETH",
+      "amount": "1.5",
+      "submittedAt": "13:41",
+      "funder": "0x4Ae1…9C22",
+      "beneficiary": "0x4Ae1…9C22",
+      "unwindTo": "n/a",
+      "deadline": "n/a",
+      "gasSpent": "n/a",
+      "onChainTrace": "Nothing on the child chain",
+      "note": "Funds left the wallet on Ethereum and arrived nowhere. Arbitrum's own documentation describes this outcome and asks chain owners to account for it in a user communication strategy. No such accounting exists, which is why this row is the reason the monitor exists.",
+      "timeline": [
+        { "t": "13:41:02", "kind": "done", "text": "1.5 ETH left the wallet and entered the parent chain bridge contract." },
+        { "t": "13:41:14", "kind": "done", "text": "Deposit message queued to the delayed inbox." },
+        { "t": "13:42:00", "kind": "missed", "text": "No credit on Robinhood Chain." },
+        { "t": "14:41:00", "kind": "missed", "text": "Still no credit. One hour elapsed." },
+        { "t": "13:41 next day", "kind": "missed", "text": "Window closed. The ETH is locked in the bridge with no corresponding child chain asset." },
+        { "t": "action", "kind": "open", "text": "Monitor flagged the deposit, matched it against the child chain, and exported the evidence." }
+      ]
+    }
+  ]
+}
