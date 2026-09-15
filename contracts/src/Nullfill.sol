@@ -97,11 +97,15 @@ contract Nullfill is ReentrancyGuard {
     );
 
     /// @notice Emitted when an order settles and tokens reach the beneficiary.
-    event Settled(bytes32 indexed ref, address indexed by, address indexed beneficiary, uint256 amount);
+    event Settled(
+        bytes32 indexed ref, address indexed by, address indexed beneficiary, uint256 amount
+    );
 
     /// @notice Emitted when an order is unwound and tokens reach the recovery address.
     /// @param by The caller. Not necessarily the funder, because unwind is permissionless.
-    event Unwound(bytes32 indexed ref, address indexed by, address indexed unwindTo, uint256 amount);
+    event Unwound(
+        bytes32 indexed ref, address indexed by, address indexed unwindTo, uint256 amount
+    );
 
     /// @notice Emitted when the parties buy more time instead of letting the escrow unwind.
     event Extended(bytes32 indexed ref, uint64 newDeadline);
@@ -161,7 +165,9 @@ contract Nullfill is ReentrancyGuard {
         Order storage o = _orders[ref];
         if (o.status == Status.None) revert UnknownRef(ref);
         if (o.status != Status.Open) revert NotOpen(ref, o.status);
-        if (msg.sender != o.funder && msg.sender != o.beneficiary) revert NotAParty(ref, msg.sender);
+        if (msg.sender != o.funder && msg.sender != o.beneficiary) {
+            revert NotAParty(ref, msg.sender);
+        }
 
         o.status = Status.Settled;
         o.token.safeTransfer(o.beneficiary, o.amount);
@@ -191,7 +197,9 @@ contract Nullfill is ReentrancyGuard {
         Order storage o = _orders[ref];
         if (o.status == Status.None) revert UnknownRef(ref);
         if (o.status != Status.Open) revert NotOpen(ref, o.status);
-        if (msg.sender != o.funder && msg.sender != o.beneficiary) revert NotAParty(ref, msg.sender);
+        if (msg.sender != o.funder && msg.sender != o.beneficiary) {
+            revert NotAParty(ref, msg.sender);
+        }
 
         uint64 earliest = uint64(block.timestamp) + FORCE_INCLUSION_WINDOW;
         if (newDeadline < earliest) revert DeadlineTooSoon(earliest);
