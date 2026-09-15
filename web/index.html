@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nullfill · settlement that survives a transaction that never happened</title>
+<meta name="description" content="Robinhood Chain screens transactions at the sequencer. A screened transfer leaves no revert, no receipt, no event and no gas. Nullfill is the escrow that stays correct when that happens.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="site-header">
+  <a class="brand" href="./">
+    <svg class="mark" viewBox="0 0 32 32" width="30" height="30" aria-hidden="true">
+      <rect width="32" height="32" rx="8" fill="#16443C"/>
+      <circle cx="16" cy="16" r="7.5" fill="none" stroke="#FAFAF8" stroke-width="2.5"
+              stroke-dasharray="35 12.1" stroke-linecap="round"/>
+      <circle cx="21.3" cy="10.7" r="3.1" fill="#C2601F"/>
+    </svg>
+    <span class="wordmark">Nullfill</span>
+  </a>
+  <div class="net">
+    <span class="dot" id="net-dot"></span>
+    <label class="sr-only" for="rpc">RPC endpoint</label>
+    <select id="rpc">
+      <option value="https://rpc.testnet.chain.robinhood.com">Robinhood Chain testnet · 46630</option>
+      <option value="https://rpc.mainnet.chain.robinhood.com">Robinhood Chain mainnet · 4663</option>
+      <option value="custom">Custom RPC</option>
+    </select>
+  </div>
+</header>
+
+<main>
+
+<section class="hero">
+  <p class="eyebrow">Robinhood Chain · ArbOS 61 compliance filtering</p>
+  <h1>Your transfer did not fail.<br><span class="gap">It never happened.</span></h1>
+  <p class="lede">
+    Robinhood Chain screens transactions at the sequencer. A screened transfer is never sequenced, so
+    it produces no revert, no receipt, no event and no gas. Every contract, indexer and counterparty
+    on the chain sees nothing at all.
+  </p>
+  <blockquote>
+    Since a blocked transfer is never processed, it simply appears as though the event never occurred.
+    <cite>Robinhood Chain developer documentation</cite>
+  </blockquote>
+  <dl class="stats">
+    <div>
+      <dt>Force inclusion window</dt>
+      <dd>24<span>hours</span></dd>
+    </div>
+    <div>
+      <dt>On-chain trace of a screened transfer</dt>
+      <dd>0<span>bytes</span></dd>
+    </div>
+    <div>
+      <dt>Gas spent telling you</dt>
+      <dd>0<span>wei</span></dd>
+    </div>
+  </dl>
+</section>
+
+<section class="panel" id="classifier">
+  <div class="panel-head">
+    <h2>Classify a transaction</h2>
+    <p>Works against the live chain. Paste any transaction hash, or start from one of the cases below.</p>
+  </div>
+
+  <form class="classify-form" id="classify-form">
+    <label class="sr-only" for="txhash">Transaction hash</label>
+    <input id="txhash" type="text" spellcheck="false" autocomplete="off"
+           placeholder="0x transaction hash">
+    <button type="submit">Classify</button>
+  </form>
+
+  <div class="presets" id="presets">
+    <button type="button" data-case="screened">A screened transfer</button>
+    <button type="button" data-case="settled">A settled transfer</button>
+    <button type="button" data-case="pending">Inside the window</button>
+    <button type="button" data-case="no-trace">Past the window, no trace</button>
+  </div>
+
+  <div class="verdict-slot" id="verdict" aria-live="polite"></div>
+</section>
+
+<section class="panel" id="ledger-panel">
+  <div class="panel-head">
+    <h2>Settlement ledger</h2>
+    <p>
+      A recorded scenario, replayed so you can read it without a wallet. Every row is an escrow this
+      contract would hold, and the state column is what the chain would tell you about it.
+    </p>
+  </div>
+  <div class="ledger" id="ledger"></div>
+</section>
+
+<section class="panel" id="detail-panel" hidden>
+  <div class="panel-head">
+    <h2 id="detail-title">Settlement</h2>
+    <p id="detail-sub"></p>
+  </div>
+  <div id="detail-body"></div>
+</section>
+
+<section class="panel" id="recovery-panel">
+  <div class="panel-head">
+    <h2>Stranded bridge deposits</h2>
+    <p>
+      The failure this contract cannot fix on chain, and the reason the monitor exists. Arbitrum's own
+      documentation describes it: ETH enters the parent bridge contract before any filtering runs on
+      the child chain, and if the credit is dropped, it is locked in the bridge with no corresponding
+      child chain asset.
+    </p>
+  </div>
+  <div id="recovery-body"></div>
+</section>
+
+<section class="panel narrow">
+  <div class="panel-head">
+    <h2>What this tool will not claim</h2>
+  </div>
+  <ul class="limits">
+    <li>
+      <strong>A failure receipt cannot tell you why.</strong> A contract revert and a transaction that
+      arrived by force inclusion and was forcibly failed both produce a receipt with a failure status,
+      no logs and burned gas. The receipt alone cannot separate them.
+    </li>
+    <li>
+      <strong>Screening is only ever directly observable at submit time.</strong> If you did not send
+      the transaction, you can never be certain it was screened rather than dropped. From outside,
+      both leave nothing.
+    </li>
+    <li>
+      <strong>The restricted address list is private.</strong> Addresses are stored as salted hashes so
+      the list cannot be enumerated. Nothing here tries to reverse it, and nothing here can tell you
+      whether a given address is on it.
+    </li>
+    <li>
+      <strong>Screening happens before execution, so the EVM cannot catch it.</strong> A transfer to a
+      restricted recovery address does not revert, it simply never runs. No contract can detect that
+      from the inside, which is why the recovery address has to be nominated in advance.
+    </li>
+  </ul>
+</section>
+
+</main>
+
+<footer class="site-footer">
+  <p>
+    Nullfill, built for the Arbitrum Open House Singapore online buildathon.
+    Primary sources are quoted in the
+    <a href="../README.md">README</a>.
+  </p>
+</footer>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
