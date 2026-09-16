@@ -2,7 +2,7 @@
 
 <p align="center"><strong>An escrow for tokenised equities that stays correct when a transfer is never sequenced at all.</strong></p>
 
-<p align="center"><a href="https://iamrobertmoore.github.io/Nullfill/">Open the settlement console</a> · <a href="https://iamrobertmoore.github.io/Nullfill/#classifier">Classify a transaction</a> · <a href="contracts/src/Nullfill.sol">Read the contract</a></p>
+<p align="center"><a href="https://iamrobertmoore.github.io/Nullfill/">Open the settlement console</a> · <a href="https://iamrobertmoore.github.io/Nullfill/#classifier">Classify a transaction</a> · <a href="https://explorer.testnet.chain.robinhood.com/address/0x71029fac49E9b45CCC377812aEc01509FFD383A1">Deployed contract</a> · <a href="contracts/src/Nullfill.sol">Read the contract</a></p>
 
 Ines runs settlement at a six-person desk that quotes tokenised equities on Robinhood Chain. Trades settle in escrow: her desk puts up the stock tokens, the counterparty puts up the cash, and the contract releases both when the trade completes.
 
@@ -93,12 +93,12 @@ forge test
 29 tests, two of them fuzzed, all passing. To deploy to Robinhood Chain testnet:
 
 ```bash
-forge script script/Deploy.s.sol:DeployNullfill \
-  --rpc-url https://rpc.testnet.chain.robinhood.com \
-  --private-key $PRIVATE_KEY --broadcast
+cd contracts && forge script script/Deploy.s.sol:DeployNullfill --rpc-url https://rpc.testnet.chain.robinhood.com --private-key $PRIVATE_KEY --broadcast
 ```
 
 The contract takes no constructor arguments and has no owner. A deployment is just the bytecode, and there is nothing to configure afterwards.
+
+It is live on Robinhood Chain testnet at [`0x71029fac49E9b45CCC377812aEc01509FFD383A1`](https://explorer.testnet.chain.robinhood.com/address/0x71029fac49E9b45CCC377812aEc01509FFD383A1). `FORCE_INCLUSION_WINDOW()` returns `86400`, and `statusOf()` on an unknown reference returns `0`.
 
 ## Where this goes next
 
