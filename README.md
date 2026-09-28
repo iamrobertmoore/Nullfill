@@ -2,19 +2,21 @@
 
 <p align="center"><strong>An escrow for tokenised equities that stays correct when a transfer is never sequenced at all.</strong></p>
 
-<p align="center"><a href="https://iamrobertmoore.github.io/Nullfill/">Open the settlement console</a> · <a href="https://iamrobertmoore.github.io/Nullfill/#classifier">Classify a transaction</a> · <a href="https://explorer.testnet.chain.robinhood.com/address/0x71029fac49E9b45CCC377812aEc01509FFD383A1">Deployed contract</a> · <a href="contracts/src/Nullfill.sol">Read the contract</a></p>
+<p align="center"><a href="https://iamrobertmoore.github.io/Nullfill/">Open the settlement console</a> · <a href="https://iamrobertmoore.github.io/Nullfill/#classifier">Classify a transaction</a> · <a href="https://explorer.testnet.chain.robinhood.com/address/0x71029fac49E9b45CCC377812aEc01509FFD383A1">Deployed contract</a> · <a href="contracts/src/Nullfill.sol">Read the contract</a> · <a href="https://iamrobertmoore.github.io/Nullfill/deck/">Pitch deck</a></p>
 
 Ines runs settlement at a six-person desk that quotes tokenised equities on Robinhood Chain. Trades settle in escrow: her desk puts up the stock tokens, the counterparty puts up the cash, and the contract releases both when the trade completes.
 
 The trouble is that on Robinhood Chain a submitted transaction has four possible fates, not two. Besides executing and reverting, it can be screened at the sequencer, in which case it is never sequenced at all. No revert, no receipt, no event, no gas. Her contract cannot see that anything was attempted. Neither can the counterparty, the indexer, or the auditor.
 
-So when a settlement does not complete, Ines is left with a question she cannot answer for a day. Is this late, or is it never coming? Release the escrow early and she risks paying twice. Wait, and her capital sits idle. And if it is her own address that was screened, she cannot send the transaction that would recover the funds either, because that transaction would be screened too.
+So when a settlement does not complete, Ines is left with a question she cannot answer for a day. Is this late, or is it never coming? Release the escrow early and she risks paying twice. Wait, and her capital sits idle. And the list that decides this is private: addresses are stored as salted hashes, so nobody can check in advance whether an address, or a counterparty's address, is on it. If the one party an escrow depends on cannot get a transaction in, whether that is screening or an outage, a conventional escrow simply waits, forever.
 
 ## The problem, counted
 
 **A screened transfer leaves 0 bytes of on-chain trace, and the chain gives you 24 hours before you may treat it as gone.**
 
-Both numbers are sourced rather than estimated. The zero is a property of the mechanism: the transaction is rejected before sequencing, so there is no receipt to find. The 24 hours is the Arbitrum force inclusion window, the period during which a transaction that was screened can still arrive by another route. Unwinding an escrow before that window closes is not caution, it is a bug, because the late arrival would settle on top of the refund.
+**And it is not a small pool of money.** 672.9 million USDG sits on Robinhood Chain mainnet, read from the token contract at block 74,889,519 on 28 September 2026. Every escrow, loan and payout that holds it assumes a transaction either lands or reverts.
+
+Both numbers in bold above are sourced rather than estimated. The zero is a property of the mechanism: the transaction is rejected before sequencing, so there is no receipt to find. The 24 hours is the Arbitrum force inclusion window, the period during which a transaction that was screened can still arrive by another route. Unwinding an escrow before that window closes is not caution, it is a bug, because the late arrival would settle on top of the refund.
 
 ## Try this
 
@@ -34,6 +36,16 @@ Two orders, 50 USDG each, from the Paxos testnet faucet, through the deployed co
 | 2 | Opened with a recovery address nominated up front. The contract will not let anyone unwind it until the 24 hour window has passed, at 15:30 BST on 29 September. After that, a wallet that has never touched the order unwinds it, and the USDG goes to the recovery address, not to whoever pressed the button. | [open](https://explorer.testnet.chain.robinhood.com/tx/0x1fa994e04fea8a82ab3550a12529f2c6c2907911e5eeede870ff527680265bfe) |
 
 Order 2 is the whole argument in one transaction. If the funder had been screened, the funds would still come home, because recovery never needed the funder to send anything.
+
+## I checked the settlement contracts in this buildathon
+
+Seventeen projects in this buildathon's field hold user funds on Robinhood Chain while they wait for something: a repayment, an expiry, a claim. I could find public contract source for eight of them, so I read those eight, one function at a time.
+
+- **None of the 8** has any logic for a transaction that is rejected at the sequencer.
+- **3 of the 8** move value because a transaction did not arrive by a deadline, and in **2** of those the deadline can be set shorter than 24 hours, inside the window in which the missing transaction can still arrive.
+- **1 of the 8** floors its grace period at 24 hours, and says why in a comment: so an outage cannot cost a borrower their collateral. That is the same window Nullfill enforces, arrived at independently.
+
+I am not naming anyone. These are other builders' entries, not bugs to report in public, and the point is the pattern: on this chain, "no transaction arrived" is treated as a decision almost everywhere, and it is not one.
 
 ## The problem, in the chain's own words
 
@@ -89,7 +101,7 @@ Two limits, stated rather than discovered.
 
 ## What this will not claim
 
-Five limits, stated here rather than discovered by a reviewer.
+Six limits, stated here rather than discovered by a reviewer.
 
 **The deployed escrow assumes the token transfers exactly.** `open()` records the amount it was asked to escrow and does not measure what arrived. A token that keeps a fee on transfer would leave that order recorded whole while the escrow held less. USDG and the five testnet equities all transfer exactly, so nothing this entry settles in is affected. The fix, a balance delta check, is written and tested, and it ships with the next deployment rather than a redeploy in the last week of the buildathon. [`test/RobinhoodChain.t.sol`](contracts/test/RobinhoodChain.t.sol) pins the current behaviour down so the limit is stated by the suite as well as here.
 
@@ -98,6 +110,8 @@ Five limits, stated here rather than discovered by a reviewer.
 **Screening is only directly observable at submit time.** If you did not send the transaction, you can never be certain it was screened rather than dropped. From outside, both leave nothing at all, and the console says so instead of guessing.
 
 **The restricted address list is private, and should be.** Addresses are stored as salted hashes precisely so the list cannot be enumerated. Nothing here tries to reverse it and nothing here can tell you whether a given address is on it.
+
+**Nullfill does not route around screening, and cannot.** Every transfer it makes is screened like any other: an unwind that would pay a restricted address is rejected at the sequencer exactly as a direct transfer would be. What it changes is who has to act, and when it is safe to act, not what the filter allows.
 
 **Screening happens before execution, so the EVM cannot catch it.** A transfer to a restricted recovery address does not revert, it simply never runs. `try`/`catch` cannot help, and no contract can detect this from the inside. That is exactly why the recovery address has to be nominated in advance, and it is a real limitation rather than a design choice.
 
@@ -161,7 +175,7 @@ The mechanism is not mine. Arbitrum documents compliance filtering, Robinhood Ch
 
 **Deadline based release already exists.** Stagepay releases escrowed milestones to a freelancer when a review window passes in silence, and its suite fuzzes fund conservation over 2,000 runs. Nullfill has the same shape and the same test discipline, and the difference is the argument rather than the mechanism. Silence past a deadline is treated there as a decision. The claim here is that on this chain an absent transaction is not a decision, and acting on it before the force inclusion window closes is the bug.
 
-**What does not exist** is anything that treats non-inclusion as a first class settlement outcome. A keyword sweep of the 86 projects in this buildathon's field on 28 September 2026 returns zero hits for `force inclusion`, `non-inclusion`, `restricted address`, `censorship` and `settlement finality`. Every escrow on every chain assumes a submitted transaction either lands or reverts. This one handles the third case, where it never happened, and names the two things that follow: recovery must not depend on the screened party transacting, and no deadline may sit inside the force inclusion window.
+**What does not exist** is anything that treats non-inclusion as a first class settlement outcome. A keyword sweep of the 90 projects in this buildathon's field on 28 September 2026 returns zero hits for `force inclusion`, `non-inclusion`, `restricted address`, `censorship` and `settlement finality`. Every escrow on every chain assumes a submitted transaction either lands or reverts. This one handles the third case, where it never happened, and names the two things that follow: recovery must not depend on the screened party transacting, and no deadline may sit inside the force inclusion window.
 
 That is the claim. It is narrower than "nobody has thought about compliance on this chain", which would be false, and it is the one the code supports.
 
@@ -177,7 +191,7 @@ Every number and address above can be checked rather than believed. This table i
 | Every address in the registry still matches the chain | `FOUNDRY_PROFILE=fork ROBINHOOD_RPC=https://rpc.testnet.chain.robinhood.com forge test --match-path test/Fork.t.sol` | 3 passing |
 | The contract's own test suite | `cd contracts && forge test` | 46 passing, 4 skipped |
 | A real USDG order settled | `cast call 0x71029fac49E9b45CCC377812aEc01509FFD383A1 "statusOf(bytes32)(uint8)" 0xfad69ced7f9b1bf95844435440a669de0644dfbf7a378f571f412529e599acee --rpc-url https://rpc.testnet.chain.robinhood.com` | `2`, which is Settled |
-| The console's own test suite | `cd web && npm test` | 22 passing |
+| The console's own test suite | `cd web && npm test` | 24 passing |
 | The asset panel really checks the chain | Open the deployed console and read the right hand column | Six rows, each saying what the chain said |
 | The screening behaviour is real | [`docs/reproduction.md`](docs/reproduction.md), run the command in it | `-32000 Transaction rejected by chain policy` |
 | The quotes are the chain's words | The four links under Sources | Each quote appears on the page linked |
@@ -198,11 +212,19 @@ Claims this repository published and then changed. Kept because a correction is 
 
 **28 September 2026.** An earlier version of this README said the route to testnet USDG was undocumented. It is documented: Paxos runs a testnet faucet that covers Robinhood Chain, 100 USDG per wallet per day. The two live orders above were funded from it.
 
-## Where this goes next
+## Who pays, and where this goes next
 
-The Arbitrum D.A.O. Grant Program runs in seasons and publishes its own evaluation rubrics and proposal templates, and it funds exactly this kind of primitive: small, verifiable, and useful to anyone else building on the chain. A settlement layer that other desks can build on is a better outcome than one desk's internal tool, and the grant programme is the route to it.
+**Who it is for.** Anyone holding funds on Robinhood Chain against a future event: OTC desks settling tokenised equities against USDG, lending protocols with a repayment deadline, protection notes with an expiry, savings pools with a payout date. The survey above found eight such contracts in one buildathon alone.
 
-The nearer term work is the monitor. Detection is currently per transaction. The useful version watches a set of addresses continuously, matches parent chain deposits against child chain credits on a schedule, and tells a desk what it is holding that it does not know about.
+**What stays free.** The escrow. It is MIT licensed, has no owner and no fee, and any team can deploy it or copy the three rules into their own contract: recovery never depends on one party transacting, the refund address is named up front, and no deadline sits inside the 24 hour window.
+
+**What I will charge for.** The watcher, which is the next thing I build. A screened transaction exists in exactly one place, the error returned to whoever sent it, and nothing on chain will ever record it. Nullfill Watch will sit between a desk and the RPC, keep that rejection as a signed, timestamped receipt, track every open escrow against its deadline, and match parent chain bridge deposits against child chain credits. The bridge panel on the console today is a recorded example of what it looks for. **$99 a month per desk, up to 25 watched addresses**, with the classifier on this page free for everyone. What grows is the number of watched addresses, and it grows with the USDG on the chain.
+
+**Roadmap.**
+
+1. **October 2026.** Deploy v1.1 with the exact-deposit guard. Nullfill Watch alpha: capture a sequencer rejection at submit time and keep it as a receipt.
+2. **November 2026.** Publish the three rules as a small Solidity library other settlement contracts can inherit, with the tests that prove each one.
+3. **Q1 2027.** External audit, then Robinhood Chain mainnet. Apply to the Arbitrum D.A.O. Grant Program, which funds exactly this kind of primitive: small, verifiable, and useful to other teams on the chain.
 
 ## Sources
 
