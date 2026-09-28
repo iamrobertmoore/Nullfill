@@ -8,6 +8,7 @@
 
 import { OUTCOME, classify, needsAction, remedy } from './lib/outcome.js';
 import { CHAIN_NAMES, TESTNET, allAssets, verifyAsset } from './lib/assets.js';
+import { LIVE_ORDERS, describeCall, decodeDescribe } from './lib/orders.js';
 
 const FORCE_INCLUSION_WINDOW_BLOCKS = 100; // illustrative; the contract uses 24 hours of wall clock
 
@@ -421,6 +422,64 @@ async function renderAssets() {
   );
 }
 
+/* ------------------------------------------------------------- live orders */
+
+// The orders live on testnet whatever the RPC selector says, so this panel always asks testnet.
+const TESTNET_RPC = 'https://rpc.testnet.chain.robinhood.com';
+
+async function testnetCall(call) {
+  const response = await fetch(TESTNET_RPC, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_call', params: [call, 'latest'] }),
+  });
+  if (!response.ok) throw new Error(`HTTP ${response.status} from the RPC`);
+  const body = await response.json();
+  if (body.error) throw new Error(body.error.message || 'RPC error');
+  return body.result;
+}
+
+function renderOrders() {
+  const host = $('#orders');
+  host.replaceChildren();
+  const explorer = EXPLORER[TESTNET];
+
+  for (const order of LIVE_ORDERS) {
+    const status = el('span', { className: 'pill warn' }, 'reading the chain');
+    const detail = el('p', { className: 'order-detail' }, '');
+    const links = el('p', { className: 'order-links' },
+      order.txs.flatMap(([name, hash], i) => [
+        i ? ' · ' : '',
+        el('a', { href: `${explorer}/tx/${hash}`, target: '_blank', rel: 'noopener' }, name),
+      ]));
+
+    host.append(el('div', { className: 'order' }, [
+      el('div', { className: 'order-top' }, [el('strong', {}, order.label), status]),
+      el('p', { className: 'order-story' }, order.story),
+      detail,
+      links,
+    ]));
+
+    testnetCall(describeCall(order.ref))
+      .then(decodeDescribe)
+      .then((o) => {
+        const good = o.status === 'Settled' || o.status === 'Unwound';
+        status.className = `pill ${good ? 'good' : 'warn'}`;
+        status.textContent = `on chain: ${o.status}`;
+        const usdg = Number(o.amount) / 1e6;
+        const when = new Date(o.deadline * 1000).toUTCString().replace(' GMT', ' UTC');
+        detail.textContent = o.status === 'Open'
+          ? `${usdg} USDG in escrow. Anyone may unwind it from ${when}${o.unwindable ? ', which has passed' : ''}.`
+          : `${usdg} USDG, ${o.status.toLowerCase()}.`;
+      })
+      .catch((error) => {
+        status.className = 'pill warn';
+        status.textContent = 'not checked';
+        status.title = `The chain could not be reached from this page: ${error.message}`;
+      });
+  }
+}
+
 /* ------------------------------------------------------------------- wiring */
 
 async function main() {
@@ -434,6 +493,7 @@ async function main() {
   }
 
   renderLedger();
+  renderOrders();
   renderRecovery();
   probeNetwork();
   renderAssets();

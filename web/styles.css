@@ -619,3 +619,42 @@ section[id] { scroll-margin-top: 84px; }
   .assets-row .asset-decimals::before { content: "decimals "; color: var(--muted); }
   .assets-row .asset-verdict { grid-area: verdict; justify-self: end; }
 }
+
+/* ---------------------------------------------------------- live orders */
+
+.stakes {
+  margin: 18px 0 0;
+  max-width: 62ch;
+  color: var(--ink-soft);
+  font-size: 15px;
+}
+
+.orders {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.order {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fff;
+  padding: 16px 18px;
+}
+
+.order-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.order-story { margin: 10px 0 6px; color: var(--ink-soft); font-size: 14.5px; }
+.order-detail { margin: 0 0 8px; font-size: 14px; color: var(--ink); min-height: 1.4em; }
+.order-links { margin: 0; font-size: 14px; }
+
+/* The network selector is the widest thing in the header; on a phone it pushed the page sideways. */
+@media (max-width: 480px) {
+  .net select { max-width: 170px; text-overflow: ellipsis; }
+  .orders { grid-template-columns: 1fr; }
+}
