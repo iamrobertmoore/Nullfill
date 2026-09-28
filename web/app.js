@@ -9,6 +9,7 @@
 import { OUTCOME, classify, needsAction, remedy } from './lib/outcome.js';
 import { CHAIN_NAMES, TESTNET, allAssets, verifyAsset } from './lib/assets.js';
 import { LIVE_ORDERS, describeCall, decodeDescribe } from './lib/orders.js';
+import { startMotion, setWindowProgress } from './lib/motion.js';
 
 const FORCE_INCLUSION_WINDOW_BLOCKS = 100; // illustrative; the contract uses 24 hours of wall clock
 
@@ -122,13 +123,13 @@ function renderLedger() {
   }
 }
 
-function selectSettlement(ref) {
+function selectSettlement(ref, scroll = true) {
   state.selected = ref;
   const settlement = state.settlements.find((s) => s.ref === ref);
   renderLedger();
   renderDetail(settlement);
   $('#detail-panel').hidden = false;
-  $('#detail-panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  if (scroll) $('#detail-panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 function renderDetail(settlement) {
@@ -439,38 +440,83 @@ async function testnetCall(call) {
   return body.result;
 }
 
+const fmtLeft = (secs) => {
+  if (secs <= 0) return 'window closed';
+  const h = Math.floor(secs / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  const s = Math.floor(secs % 60);
+  return `${h}h ${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s left`;
+};
+
+function txLink(name, hash) {
+  return el('a', { href: `${EXPLORER[TESTNET]}/tx/${hash}`, target: '_blank', rel: 'noopener' }, `${name} ${hash.slice(0, 10)}…`);
+}
+
 function renderOrders() {
   const host = $('#orders');
   host.replaceChildren();
-  const explorer = EXPLORER[TESTNET];
 
   for (const order of LIVE_ORDERS) {
     const status = el('span', { className: 'pill warn' }, 'reading the chain');
-    const detail = el('p', { className: 'order-detail' }, '');
-    const links = el('p', { className: 'order-links' },
-      order.txs.flatMap(([name, hash], i) => [
-        i ? ' · ' : '',
-        el('a', { href: `${explorer}/tx/${hash}`, target: '_blank', rel: 'noopener' }, name),
-      ]));
-
-    host.append(el('div', { className: 'order' }, [
+    const steps = el('ol', { className: 'steps' });
+    const card = el('div', { className: 'order reveal in' }, [
       el('div', { className: 'order-top' }, [el('strong', {}, order.label), status]),
       el('p', { className: 'order-story' }, order.story),
-      detail,
-      links,
-    ]));
+      steps,
+    ]);
+    host.append(card);
 
     testnetCall(describeCall(order.ref))
       .then(decodeDescribe)
       .then((o) => {
+        const usdg = Number(o.amount) / 1e6;
         const good = o.status === 'Settled' || o.status === 'Unwound';
         status.className = `pill ${good ? 'good' : 'warn'}`;
         status.textContent = `on chain: ${o.status}`;
-        const usdg = Number(o.amount) / 1e6;
-        const when = new Date(o.deadline * 1000).toUTCString().replace(' GMT', ' UTC');
-        detail.textContent = o.status === 'Open'
-          ? `${usdg} USDG in escrow. Anyone may unwind it from ${when}${o.unwindable ? ', which has passed' : ''}.`
-          : `${usdg} USDG, ${o.status.toLowerCase()}.`;
+        card.querySelector('.order-top').append(el('span', { className: 'order-amount sr-only' }, `${usdg} USDG`));
+
+        const opened = order.txs.find(([n]) => n === 'open');
+        const li = (cls, title, rest) => el('li', { className: cls }, [el('b', {}, title), ...(rest || [])]);
+        steps.append(li('done', `Opened, ${usdg} USDG in escrow. `, [txLink('open', opened[1])]));
+
+        if (o.status === 'Settled') {
+          const settle = order.txs.find(([n]) => n === 'settle');
+          steps.append(li('done', 'Settled to the counterparty. ', settle ? [txLink('settle', settle[1])] : []));
+          const held = el('span', { className: 'live-val' }, 'reading');
+          steps.append(li('done', 'The counterparty holds it now: ', [held]));
+          const bal = '0x70a08231' + o.beneficiary.slice(2).padStart(64, '0'); // balanceOf(address)
+          testnetCall({ to: o.token, data: bal })
+            .then((hex) => { held.textContent = `${Number(BigInt(hex)) / 1e6} USDG, read live from the token.`; })
+            .catch(() => { held.textContent = 'could not read the balance from this page.'; });
+          return;
+        }
+
+        const openedAt = o.deadline - 86400 - 600; // the demo script adds a ten minute margin
+        const bar = el('i');
+        const left = el('span', { className: 'countdown' }, '');
+        const windowLi = li(o.status === 'Open' && !o.unwindable ? 'now' : 'done', 'The 24 hour window. ', [
+          el('span', {}, 'Nobody can unwind it yet, and the contract refuses anyone who tries.'),
+          el('div', { className: 'window-bar' }, [bar]),
+          el('div', { className: 'window-meta' }, [el('span', {}, `unwindable from ${new Date(o.deadline * 1000).toUTCString().slice(17, 22)} UTC`), left]),
+        ]);
+        steps.append(windowLi);
+
+        const unwindTx = order.txs.find(([n]) => n === 'unwind');
+        if (o.status === 'Unwound') {
+          steps.append(li('done', 'Unwound by a wallet that never touched the order. The USDG went to the recovery address. ', unwindTx ? [txLink('unwind', unwindTx[1])] : []));
+        } else {
+          steps.append(li(o.unwindable ? 'now' : '', o.unwindable ? 'Open to anyone. Any wallet can unwind it now.' : 'Then anyone can unwind it, and the USDG goes to the recovery address.'));
+        }
+
+        const update = () => {
+          const now = Date.now() / 1000;
+          const frac = Math.min(1, Math.max(0, (now - openedAt) / (o.deadline - openedAt)));
+          bar.style.width = `${(frac * 100).toFixed(2)}%`;
+          left.textContent = o.status === 'Unwound' ? 'window closed' : fmtLeft(o.deadline - now);
+          setWindowProgress(frac, o.status === 'Unwound' ? 'order 2 unwound after it' : `order 2: ${Math.round(frac * 100)}% of its window gone`);
+        };
+        update();
+        setInterval(update, 1000);
       })
       .catch((error) => {
         status.className = 'pill warn';
@@ -493,6 +539,7 @@ async function main() {
   }
 
   renderLedger();
+  startMotion();
   renderOrders();
   renderRecovery();
   probeNetwork();
@@ -504,6 +551,15 @@ async function main() {
   });
 
   $('#presets').addEventListener('click', (event) => {
+    const live = event.target.closest('button[data-live]');
+    if (live) {
+      // Live presets always ask testnet, where the real orders are.
+      $('#rpc').value = 'https://rpc.testnet.chain.robinhood.com';
+      state.rpc = $('#rpc').value;
+      $('#txhash').value = live.dataset.live;
+      classifyHash(live.dataset.live);
+      return;
+    }
     const button = event.target.closest('button[data-case]');
     if (!button) return;
     const preset = PRESETS[button.dataset.case];
@@ -527,7 +583,7 @@ async function main() {
 
   // Open on the case that matters, so the page does not land on a settled row.
   const screened = state.settlements.find((s) => s.outcome === OUTCOME.SCREENED);
-  if (screened) selectSettlement(screened.ref);
+  if (screened) selectSettlement(screened.ref, false);
 }
 
 main();
