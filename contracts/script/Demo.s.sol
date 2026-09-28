@@ -11,7 +11,7 @@ import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IER
 /// @notice Drives one real order on the deployed contract, on a real chain, with a real Robinhood
 ///         Chain asset. One command per step, and every step prints what a reviewer would need.
 ///
-/// @dev Read `DEMO.md` for the runbook. The shape is:
+/// @dev The shape is:
 ///
 ///        export RPC=https://rpc.testnet.chain.robinhood.com
 ///        export PRIVATE_KEY=0x...

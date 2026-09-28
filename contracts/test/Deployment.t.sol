@@ -57,8 +57,8 @@ contract DeploymentTest is Test {
         if (keccak256(onChain) != keccak256(built)) {
             emit log_named_uint("deployed bytes", onChain.length);
             emit log_named_uint("source compiles to", built.length);
-            emit log("The repository does not match its own deployment. Redeploy, or revert the");
-            emit log("contract change. See REDEPLOY.md in the working notes.");
+            emit log("The repository does not match its own deployment. Either redeploy the");
+            emit log("contract from this source, or revert the change the deployment predates.");
         }
 
         assertEq(
