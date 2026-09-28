@@ -69,6 +69,25 @@ Money leaves the wallet. It arrives nowhere. It is locked in a bridge contract, 
 
 No contract can fix this, because the failure is on the other side of the bridge. So the console watches for it instead, matches parent chain deposits against child chain credits, and produces the evidence. That is the third panel on the page.
 
+## Nullfill Watch, alpha
+
+A screened transaction exists in exactly one place: the error the RPC returned to whoever sent it. Nothing on chain will ever record it. [`watch/`](watch/) keeps that record. No dependencies, Node 22.
+
+```bash
+node watch/nullfill-watch.mjs proxy --rpc https://rpc.testnet.chain.robinhood.com --port 8646
+```
+
+Point a wallet or script at `http://127.0.0.1:8646`. Everything passes straight through, and every `eth_sendRawTransaction` gets a receipt signed with the watcher's Ed25519 key: the raw transaction, its hash, what the RPC said, and when. The sender still sees the real error. The receipt is what they can show a counterparty afterwards.
+
+```bash
+node watch/nullfill-watch.mjs escrows --address 0x1f73e798AcC33eb93Eb61825591d9b73C7Ee7D4A
+node watch/nullfill-watch.mjs verify web/data/sample-receipt.json
+```
+
+`escrows` lists every Nullfill escrow an address is party to, read from the contract's events, with how long until anyone may unwind it. `verify` checks a receipt's format, that its hash really is the keccak256 of its raw transaction, and the signature.
+
+[`web/data/sample-receipt.json`](web/data/sample-receipt.json) is real: the live Robinhood Chain RPC refused that transaction on 28 September 2026. It was refused for a stale nonce, not screening, because nobody can make the live chain screen on demand. The capture path is the same one a screening rejection takes. The console verifies it in your browser, and has a button that changes one word so you can watch the signature fail.
+
 ## How it works
 
 ![Nullfill architecture: three addresses, an escrow on Robinhood Chain, two routes in, four states out](docs/architecture.svg)
@@ -192,6 +211,8 @@ Every number and address above can be checked rather than believed. This table i
 | The contract's own test suite | `cd contracts && forge test` | 46 passing, 4 skipped |
 | A real USDG order settled | `cast call 0x71029fac49E9b45CCC377812aEc01509FFD383A1 "statusOf(bytes32)(uint8)" 0xfad69ced7f9b1bf95844435440a669de0644dfbf7a378f571f412529e599acee --rpc-url https://rpc.testnet.chain.robinhood.com` | `2`, which is Settled |
 | The console's own test suite | `cd web && npm test` | 24 passing |
+| The watcher's test suite | `cd watch && npm test` | 4 passing |
+| A real refusal, signed and checkable | `node watch/nullfill-watch.mjs verify web/data/sample-receipt.json` | three `ok` lines |
 | The asset panel really checks the chain | Open the deployed console and read the right hand column | Six rows, each saying what the chain said |
 | The screening behaviour is real | [`docs/reproduction.md`](docs/reproduction.md), run the command in it | `-32000 Transaction rejected by chain policy` |
 | The quotes are the chain's words | The four links under Sources | Each quote appears on the page linked |
@@ -218,13 +239,14 @@ Claims this repository published and then changed. Kept because a correction is 
 
 **What stays free.** The escrow. It is MIT licensed, has no owner and no fee, and any team can deploy it or copy the three rules into their own contract: recovery never depends on one party transacting, the refund address is named up front, and no deadline sits inside the 24 hour window.
 
-**What I will charge for.** The watcher, which is the next thing I build. A screened transaction exists in exactly one place, the error returned to whoever sent it, and nothing on chain will ever record it. Nullfill Watch will sit between a desk and the RPC, keep that rejection as a signed, timestamped receipt, track every open escrow against its deadline, and match parent chain bridge deposits against child chain credits. The bridge panel on the console today is a recorded example of what it looks for. **$99 a month per desk, up to 25 watched addresses**, with the classifier on this page free for everyone. What grows is the number of watched addresses, and it grows with the USDG on the chain.
+**What I will charge for.** The watcher. The alpha is in the repo today (above); the hosted version is the product. A screened transaction exists in exactly one place, the error returned to whoever sent it, and nothing on chain will ever record it. The alpha already sits between a desk and the RPC, keeps that rejection as a signed, timestamped receipt, and lists every open escrow against its deadline. The hosted version adds alerts and matches parent chain bridge deposits against child chain credits; the bridge panel on the console today is a recorded example of what it looks for. **$99 a month per desk, up to 25 watched addresses**, with the classifier on this page free for everyone. What grows is the number of watched addresses, and it grows with the USDG on the chain.
 
 **Roadmap.**
 
-1. **October 2026.** Deploy v1.1 with the exact-deposit guard. Nullfill Watch alpha: capture a sequencer rejection at submit time and keep it as a receipt.
-2. **November 2026.** Publish the three rules as a small Solidity library other settlement contracts can inherit, with the tests that prove each one.
-3. **Q1 2027.** External audit, then Robinhood Chain mainnet. Apply to the Arbitrum D.A.O. Grant Program, which funds exactly this kind of primitive: small, verifiable, and useful to other teams on the chain.
+1. **Now.** Nullfill Watch alpha, in [`watch/`](watch/): signed receipts for refused transactions, and escrow deadlines per address.
+2. **October 2026.** Deploy v1.1 with the exact-deposit guard. Hosted Watch with alerts.
+3. **November 2026.** Publish the three rules as a small Solidity library other settlement contracts can inherit, with the tests that prove each one.
+4. **Q1 2027.** External audit, then Robinhood Chain mainnet. Apply to the Arbitrum D.A.O. Grant Program, which funds exactly this kind of primitive: small, verifiable, and useful to other teams on the chain.
 
 ## Sources
 
