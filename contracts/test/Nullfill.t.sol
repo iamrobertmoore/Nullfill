@@ -63,6 +63,15 @@ contract NullfillTest is Test {
         nullfill.open(REF, beneficiary, IERC20(address(tsla)), AMOUNT, deadline, recovery);
     }
 
+    // -------------------------------------------------------------- the window
+
+    /// Every other test reads the window from the contract, so a change to the constant would slip
+    /// through all of them. A mutation run found exactly that: halving the window to 12 hours left the
+    /// whole offline suite green. This pins the number to the one Arbitrum documents.
+    function test_ForceInclusionWindow_IsTwentyFourHours() public view {
+        assertEq(nullfill.FORCE_INCLUSION_WINDOW(), 86_400, "the documented force inclusion window");
+    }
+
     // ---------------------------------------------------------------- open
 
     function test_Open_EscrowsTokens() public {
