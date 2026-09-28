@@ -106,13 +106,21 @@ git submodule update --init --recursive
 forge test
 ```
 
-44 tests, four of them fuzzed, all passing. Three more run against a live chain and report as **skipped** rather than passed when there is no RPC, which is deliberate: a network check that quietly reports success when it did not run reads as evidence.
+45 tests, four of them fuzzed, all passing. Four more run against a live chain and report as **skipped** rather than passed when there is no RPC, which is deliberate: a network check that quietly reports success when it did not run reads as evidence.
 
 ```bash
 FOUNDRY_PROFILE=fork ROBINHOOD_RPC=https://rpc.testnet.chain.robinhood.com forge test --match-path test/Fork.t.sol
 ```
 
 The `fork` profile raises the EVM version to Cancun, and it is required rather than optional. The live tokens use `PUSH0` and this project deploys Paris bytecode, so without it every call to a real token fails with `EvmError: NotActivated`. The default stays Paris on purpose: the deployed contract is Paris bytecode and Paris bytecode runs on any chain at or above it.
+
+There is one more check, and it is the one that matters most. It asserts that the bytecode on chain is what this repository compiles to, because a repository that does not match its own deployment is worse than a contract missing one hardening:
+
+```bash
+ROBINHOOD_RPC=https://rpc.testnet.chain.robinhood.com forge test --match-path test/Deployment.t.sol
+```
+
+Run it under the default profile, not the fork profile, so the comparison is against the bytecode this project actually deploys.
 
 To deploy to Robinhood Chain testnet:
 
@@ -150,14 +158,19 @@ Every number and address above can be checked rather than believed. This table i
 
 | Claim | How to check it | What you should see |
 |---|---|---|
+| **The deployment is this source** | `ROBINHOOD_RPC=https://rpc.testnet.chain.robinhood.com forge test --match-path test/Deployment.t.sol` | 2 passing. This compares the bytecode on chain against what the repository compiles to, and it fails loudly if they diverge. |
 | The contract is deployed and the window is 24 hours | `cast call 0x71029fac49E9b45CCC377812aEc01509FFD383A1 "FORCE_INCLUSION_WINDOW()(uint64)" --rpc-url https://rpc.testnet.chain.robinhood.com` | `86400` |
 | USDG is at that address and is six decimals | `cast call 0x7E955252E15c84f5768B83c41a71F9eba181802F "decimals()(uint8)" --rpc-url https://rpc.testnet.chain.robinhood.com` | `6` |
 | Every address in the registry still matches the chain | `FOUNDRY_PROFILE=fork ROBINHOOD_RPC=https://rpc.testnet.chain.robinhood.com forge test --match-path test/Fork.t.sol` | 3 passing |
-| The contract's own test suite | `cd contracts && forge test` | 44 passing, 3 skipped |
+| The contract's own test suite | `cd contracts && forge test` | 45 passing, 4 skipped |
 | The console's own test suite | `cd web && npm test` | 22 passing |
 | The asset panel really checks the chain | Open the deployed console and read the right hand column | Six rows, each saying what the chain said |
 | The screening behaviour is real | [`docs/reproduction.md`](docs/reproduction.md), run the command in it | `-32000 Transaction rejected by chain policy` |
 | The quotes are the chain's words | The four links under Sources | Each quote appears on the page linked |
+
+Two of those rows are skipped rather than passed when there is no RPC, and one of them is the row that
+matters most. A check that reports success when it did not run is worse than no check, so the counts
+above name the skips rather than hiding them.
 
 ## Corrections
 
