@@ -86,7 +86,11 @@ contract Demo is Script {
         address beneficiary = vm.envOr("DEMO_BENEFICIARY", msg.sender);
         address unwindTo = vm.envOr("DEMO_UNWIND_TO", msg.sender);
 
-        uint64 deadline = uint64(block.timestamp) + nullfill.FORCE_INCLUSION_WINDOW();
+        // The contract checks the deadline against the timestamp of the block the transaction lands in,
+        // which is later than the block this script simulated against. A deadline of exactly now plus the
+        // window would revert with DeadlineTooSoon on chain, so add a margin. Ten minutes by default.
+        uint64 margin = uint64(vm.envOr("DEMO_MARGIN", uint256(600)));
+        uint64 deadline = uint64(block.timestamp) + nullfill.FORCE_INCLUSION_WINDOW() + margin;
 
         console.log("");
         console.log("Opening. The deadline is the earliest the escrow may be unwound, and it is the");
