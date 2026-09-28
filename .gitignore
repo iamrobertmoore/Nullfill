@@ -19,3 +19,6 @@ web/node_modules/
 
 # Logs
 *.log
+
+# Watch receipts are the user's records, not the project's. The sample lives in web/data/.
+watch/receipts/

@@ -1,0 +1,9 @@
+{
+  "name": "nullfill-watch",
+  "private": true,
+  "type": "module",
+  "description": "Keeps a signed receipt of every transaction the RPC refused. No dependencies.",
+  "bin": { "nullfill-watch": "./nullfill-watch.mjs" },
+  "scripts": { "test": "node --test" },
+  "engines": { "node": ">=22" }
+}

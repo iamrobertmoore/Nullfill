@@ -27,6 +27,17 @@ jobs:
       - name: Test, offline
         run: forge test -vv
 
+  watch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Test
+        working-directory: watch
+        run: node --test
+
   console:
     runs-on: ubuntu-latest
     steps:

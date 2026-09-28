@@ -1,0 +1,21 @@
+{
+  "kind": "nullfill.watch.receipt/v1",
+  "observedAt": "2026-09-28T16:02:32.360Z",
+  "upstream": "https://rpc.testnet.chain.robinhood.com",
+  "chainId": 46630,
+  "method": "eth_sendRawTransaction",
+  "rawTx": "0x02f86882b62680018401312d00825208945565a33a63ee42fc8bae96f823182cf7269ba11a0180c001a0976b5b59ac7614ba54a2fbed71c9d57ba7c831bd440b6485594a90624eff67e9a00d474436bb80ce307b263f5615e4b1e590d401abee94a8d1f49c26d1bdd659dc",
+  "txHash": "0x8a506bc59531818d577b549e5d13d5ee8ce115940293b7559cab87dbd7185a8f",
+  "outcome": "rejected",
+  "error": {
+    "code": -32000,
+    "message": "nonce too low: address 0x1f73e798AcC33eb93Eb61825591d9b73C7Ee7D4A, tx: 0 state: 7"
+  },
+  "result": null,
+  "onChainTrace": "none: a rejected submission is never sequenced",
+  "watcher": {
+    "alg": "Ed25519",
+    "publicKey": "61ee92942213b9cb7254faf625234b63e531c405862a5b61d38fe87712c7a523"
+  },
+  "signature": "9e2381d1d3cd800b460b5eed92a0294f2247727cea8e03daf4a36267551e6c8875dd6a84f671282e5fa8da1aeb9ff801b94b3e7c239f276e96f84e6a2690fa0c"
+}
