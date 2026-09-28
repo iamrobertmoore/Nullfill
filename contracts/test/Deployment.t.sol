@@ -15,6 +15,10 @@ import {Test} from "forge-std/Test.sol";
 ///      minute, and a repository that does not match its own deployment is worse than a contract
 ///      missing one hardening.
 ///
+///      The source was restored to the deployed version rather than the contract being redeployed,
+///      because the contract was frozen for the last week of the buildathon. The guard is held for the
+///      next deployment, and `test/RobinhoodChain.t.sol` pins the limitation down in the meantime.
+///
 ///      So the check is now a test rather than a habit.
 ///
 ///      **Run it under the default profile, not the fork profile.**
