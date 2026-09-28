@@ -10,6 +10,7 @@ import { OUTCOME, classify, needsAction, remedy } from './lib/outcome.js';
 import { CHAIN_NAMES, TESTNET, allAssets, verifyAsset } from './lib/assets.js';
 import { LIVE_ORDERS, describeCall, decodeDescribe } from './lib/orders.js';
 import { startMotion, setWindowProgress } from './lib/motion.js';
+import { verifyReceipt } from './lib/receipt.js';
 
 const FORCE_INCLUSION_WINDOW_BLOCKS = 100; // illustrative; the contract uses 24 hours of wall clock
 
@@ -526,6 +527,65 @@ function renderOrders() {
   }
 }
 
+/* -------------------------------------------------------------------- watch */
+
+let originalReceipt = null;
+
+function renderReceipt(receipt) {
+  const fields = $('#receipt-fields');
+  const short = (v) => (v && v.length > 26 ? `${v.slice(0, 14)}…${v.slice(-8)}` : v);
+  fields.replaceChildren(
+    fact('Outcome', receipt.outcome === 'rejected' ? 'Refused by the RPC' : 'Accepted'),
+    fact('What the RPC said', receipt.error ? `${receipt.error.code} ${receipt.error.message}` : receipt.result),
+    fact('Transaction hash', short(receipt.txHash), 'mono'),
+    fact('Observed', receipt.observedAt),
+    fact('On chain', receipt.onChainTrace),
+    fact('Watcher key (Ed25519)', short(receipt.watcher?.publicKey), 'mono'),
+  );
+}
+
+async function checkReceipt(receipt) {
+  const list = $('#receipt-checks');
+  list.replaceChildren(el('li', {}, [el('span', { className: 'pill warn' }, 'checking')]));
+  try {
+    const { checks } = await verifyReceipt(receipt);
+    list.replaceChildren(...checks.map((c) => el('li', {}, [
+      el('span', { className: `pill ${c.ok ? 'good' : 'bad'}` }, c.ok ? 'passes' : 'fails'),
+      el('b', {}, ` ${c.name}. `),
+      el('span', {}, c.detail),
+    ])));
+  } catch (error) {
+    list.replaceChildren(el('li', {}, `This browser could not run the check: ${error.message}. Ed25519 in WebCrypto needs a current browser.`));
+  }
+}
+
+async function renderWatch() {
+  if (!$('#watch')) return;
+  try {
+    originalReceipt = await (await fetch('./data/sample-receipt.json')).json();
+  } catch {
+    $('#receipt-checks').replaceChildren(el('li', {}, 'The sample receipt did not load.'));
+    return;
+  }
+  const show = (r) => { renderReceipt(r); checkReceipt(r); };
+  show(originalReceipt);
+
+  $('#tamper').addEventListener('click', () => {
+    // Change one word of what the RPC said, as someone rewriting the record would.
+    const forged = structuredClone(originalReceipt);
+    forged.error = { ...forged.error, message: 'transaction accepted' };
+    show(forged);
+  });
+  $('#restore').addEventListener('click', () => show(originalReceipt));
+  $('#verify-pasted').addEventListener('click', () => {
+    try {
+      show(JSON.parse($('#receipt-input').value));
+    } catch (error) {
+      $('#receipt-checks').replaceChildren(el('li', {}, `That is not valid JSON: ${error.message}`));
+    }
+  });
+}
+
 /* ------------------------------------------------------------------- wiring */
 
 async function main() {
@@ -541,6 +601,7 @@ async function main() {
   renderLedger();
   startMotion();
   renderOrders();
+  renderWatch();
   renderRecovery();
   probeNetwork();
   renderAssets();

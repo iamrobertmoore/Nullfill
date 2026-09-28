@@ -9,7 +9,7 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -32,6 +32,7 @@
     <a href="#orders-panel">Live orders</a>
     <a href="#classifier">Classify</a>
     <a href="#rules">The contract</a>
+    <a href="#watch">Watch</a>
     <a href="deck/">Deck</a>
   </nav>
   <div class="net">
@@ -275,9 +276,44 @@ _orders[ref] = Order({ ..., unwindTo: recovery, ... });</code></pre>
   <div id="recovery-body" class="reveal"></div>
 </section>
 
+<section class="section" id="watch">
+  <div class="section-head reveal">
+    <p class="kicker"><span>08</span> Nullfill Watch, alpha</p>
+    <h2>The chain keeps no record of a refusal. <em>So the watcher does.</em></h2>
+    <p>
+      Watch sits between a wallet or script and the RPC. Every transaction that passes through gets a
+      receipt signed with the watcher's key, whether it was accepted or refused. The one below is real:
+      the live Robinhood Chain RPC refused it on 28 September. It was refused for a stale nonce, not
+      screening, because nobody can make the live chain screen on demand. The capture path is the same.
+    </p>
+  </div>
+  <div class="tool watch reveal">
+    <div class="watch-grid">
+      <dl class="receipt" id="receipt-fields"></dl>
+      <div class="receipt-checks">
+        <p class="checks-title">Checked in your browser, just now</p>
+        <ul id="receipt-checks"></ul>
+        <div class="watch-actions">
+          <button type="button" id="tamper">Tamper with it</button>
+          <button type="button" id="restore">Restore the original</button>
+        </div>
+      </div>
+    </div>
+    <details class="paste">
+      <summary>Verify your own receipt</summary>
+      <textarea id="receipt-input" spellcheck="false" placeholder="Paste a receipt JSON from nullfill-watch"></textarea>
+      <button type="button" id="verify-pasted">Verify</button>
+    </details>
+<pre class="run"><code><span class="c"># sit between your wallet and the RPC, and keep a signed record of every refusal</span>
+node watch/nullfill-watch.mjs proxy --rpc https://rpc.testnet.chain.robinhood.com --port 8646
+<span class="c"># every escrow an address is party to, and when anyone may unwind it</span>
+node watch/nullfill-watch.mjs escrows --address 0x…</code></pre>
+  </div>
+</section>
+
 <section class="section" id="assets-panel">
   <div class="section-head reveal">
-    <p class="kicker"><span>08</span> Settlement assets</p>
+    <p class="kicker"><span>09</span> Settlement assets</p>
     <h2>The cash leg is USDG. <em>Every address is checked live.</em></h2>
     <p>Robinhood Chain lists Paxos USDG under Stablecoin on its own ecosystem page. Each row below says what the chain said, and says so plainly when it couldn't check.</p>
   </div>
@@ -286,7 +322,7 @@ _orders[ref] = Order({ ..., unwindTo: recovery, ... });</code></pre>
 
 <section class="section" id="limits">
   <div class="section-head reveal">
-    <p class="kicker"><span>09</span> What this won't claim</p>
+    <p class="kicker"><span>10</span> What this won't claim</p>
     <h2>Limits, <em>stated before anyone finds them.</em></h2>
   </div>
   <ul class="limits reveal">
@@ -299,8 +335,8 @@ _orders[ref] = Order({ ..., unwindTo: recovery, ... });</code></pre>
 </section>
 
 <section class="closer reveal">
-  <h2>The escrow is free. <em>The watcher is next.</em></h2>
-  <p>Nullfill Watch will keep a screened transaction as a signed receipt, since the sender's error is the only record that exists, and track every deadline and bridge deposit. $99 a month per desk.</p>
+  <h2>The escrow is free. <em>The watcher is the business.</em></h2>
+  <p>The Watch alpha is in the repo today: signed receipts for refused transactions, and every escrow's deadline for an address. The hosted version, with alerts and bridge-deposit matching, is $99 a month per desk.</p>
   <div class="cta-row">
     <a class="btn primary" href="deck/">Open the pitch deck <span aria-hidden="true">→</span></a>
     <a class="btn ghost" href="https://github.com/iamrobertmoore/Nullfill">Read the code</a>

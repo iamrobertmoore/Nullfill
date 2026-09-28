@@ -6,16 +6,17 @@
 <title>Nullfill · pitch deck</title>
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
   :root {
     --ink: #12161b; --ink-soft: #3d444d; --muted: #6e6a62;
-    --paper: #fafaf8; --paper-2: #f3f2ed; --line: #e4e2dc;
+    --paper: #f6f5f0; --paper-2: #f3f2ed; --line: #e4e2dc;
     --brand: #16443c; --brand-soft: #e6efec;
     --signal: #c2601f; --signal-soft: #fbeee5;
     --good: #1f7a4d; --good-soft: #e8f3ec;
-    --sans: "Inter", ui-sans-serif, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
-    --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+    --serif: "Geist", "Inter", sans-serif;
+    --sans: "Geist", "Inter", ui-sans-serif, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    --mono: "Geist Mono", "JetBrains Mono", ui-monospace, Menlo, monospace;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; background: #d9d7d0; color: var(--ink); font-family: var(--sans); }
@@ -39,33 +40,35 @@
   .brand { display: flex; align-items: center; gap: 14px; font-weight: 700; color: var(--ink); }
   .dark .brand { color: var(--paper); }
   .eyebrow { font-size: 26px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--signal); margin: 0 0 26px; }
-  h1 { font-size: 104px; line-height: 1.02; letter-spacing: -0.035em; margin: 0; font-weight: 800; }
-  h2 { font-size: 76px; line-height: 1.06; letter-spacing: -0.03em; margin: 0 0 40px; font-weight: 800; max-width: 1500px; }
+  h1 { font-family: var(--serif); font-size: 112px; line-height: 1.0; letter-spacing: -0.05em; margin: 0; font-weight: 700; }
+  h1 em, h2 em { font-style: normal; color: var(--signal); }
+  .dark h1 em { color: #f0a36c; }
+  h2 { font-family: var(--serif); font-size: 78px; line-height: 1.06; letter-spacing: -0.045em; margin: 0 0 40px; font-weight: 700; max-width: 1560px; }
   .gap { color: var(--signal); }
   .lede { font-size: 38px; line-height: 1.35; color: var(--ink-soft); max-width: 1400px; margin: 40px 0 0; }
   .dark .lede { color: rgba(250,250,248,.85); }
   .big { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; margin-top: 30px; }
-  .num { font-size: 250px; font-weight: 800; letter-spacing: -0.05em; line-height: .9; color: var(--brand); }
-  .num span { font-size: 64px; letter-spacing: -0.01em; margin-left: 16px; color: var(--ink-soft); font-weight: 700; }
+  .num { font-family: var(--serif); font-size: 280px; font-weight: 700; letter-spacing: -0.06em; line-height: .85; color: var(--brand); }
+  .num span { font-family: var(--sans); font-size: 60px; letter-spacing: -0.01em; margin-left: 16px; color: var(--ink-soft); font-weight: 700; }
   .cap { font-size: 34px; line-height: 1.35; color: var(--ink-soft); margin-top: 26px; max-width: 700px; }
-  blockquote { margin: 0; font-size: 70px; line-height: 1.18; letter-spacing: -0.02em; font-weight: 700; max-width: 1560px;
+  blockquote { margin: 0; font-family: var(--serif); font-size: 76px; line-height: 1.14; letter-spacing: -0.04em; font-weight: 600; max-width: 1560px;
                border-left: 10px solid var(--signal); padding-left: 56px; }
-  cite { display: block; font-style: normal; font-size: 30px; font-weight: 500; color: var(--muted); margin-top: 40px; letter-spacing: 0; }
+  cite { display: block; font-family: var(--sans); font-style: normal; font-size: 30px; font-weight: 500; color: var(--muted); margin-top: 40px; letter-spacing: 0; }
   .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px; margin-top: 56px; }
   .card { background: #fff; border: 2px solid var(--line); border-radius: 22px; padding: 36px 38px; }
-  .card .k { font-size: 104px; font-weight: 800; letter-spacing: -0.04em; color: var(--brand); line-height: 1; }
+  .card .k { font-family: var(--serif); font-size: 120px; font-weight: 700; letter-spacing: -0.06em; color: var(--brand); line-height: 1; }
   .card .k.warn { color: var(--signal); }
   .card .t { font-size: 29px; line-height: 1.32; color: var(--ink-soft); margin-top: 18px; }
   .rules { list-style: none; padding: 0; margin: 40px 0 0; display: grid; gap: 64px; counter-reset: r; }
   .rules li { counter-increment: r; display: grid; grid-template-columns: 110px 1fr; align-items: start;
               font-size: 54px; line-height: 1.22; font-weight: 700; }
   .rules li::before { content: counter(r); width: 84px; height: 84px; border-radius: 50%; background: var(--brand); color: var(--paper);
-              display: grid; place-items: center; font-size: 44px; font-weight: 800; }
+              display: grid; place-items: center; font-family: var(--mono); font-size: 40px; font-weight: 600; }
   .rules small { display: block; font-size: 36px; font-weight: 400; color: var(--ink-soft); margin-top: 8px; }
   .orders { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 10px; }
   .order { background: #fff; border: 2px solid var(--line); border-radius: 22px; padding: 44px; }
-  .order h3 { margin: 0 0 18px; font-size: 44px; display: flex; justify-content: space-between; align-items: center; }
-  .pill { font-size: 26px; font-weight: 600; border-radius: 999px; padding: 8px 22px; }
+  .order h3 { margin: 0 0 18px; font-family: var(--serif); font-weight: 700; letter-spacing: -0.04em; font-size: 48px; display: flex; justify-content: space-between; align-items: center; }
+  .pill { font-family: var(--sans); font-size: 26px; font-weight: 600; border-radius: 999px; padding: 8px 22px; }
   .pill.good { background: var(--good-soft); color: var(--good); }
   .order p { font-size: 32px; line-height: 1.38; color: var(--ink-soft); margin: 0 0 22px; }
   code, .mono { font-family: var(--mono); }
@@ -74,16 +77,16 @@
   .money { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 10px; }
   .money .card { padding: 50px; }
   .money h3 { margin: 0 0 20px; font-size: 30px; letter-spacing: .08em; text-transform: uppercase; color: var(--signal); }
-  .money .price { font-size: 110px; font-weight: 800; letter-spacing: -0.04em; color: var(--brand); line-height: 1; }
-  .money .price span { font-size: 40px; color: var(--ink-soft); font-weight: 600; letter-spacing: 0; }
+  .money .price { font-family: var(--serif); font-size: 120px; font-weight: 700; letter-spacing: -0.06em; color: var(--brand); line-height: 1; }
+  .money .price span { font-family: var(--sans); font-size: 40px; color: var(--ink-soft); font-weight: 600; letter-spacing: 0; }
   .money p { font-size: 34px; line-height: 1.38; color: var(--ink-soft); margin: 22px 0 0; }
-  .road { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; margin-top: 150px; position: relative; }
+  .road { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-top: 150px; position: relative; }
   .road::before { content: ""; position: absolute; top: 34px; left: 34px; right: 34px; height: 6px; background: var(--line); border-radius: 3px; }
   .step { position: relative; padding-right: 50px; }
   .step .dot { width: 74px; height: 74px; border-radius: 50%; background: var(--paper); border: 8px solid var(--brand); }
   .step:first-child .dot { background: var(--brand); }
   .step .when { font-size: 30px; font-weight: 700; color: var(--signal); margin: 36px 0 12px; letter-spacing: .04em; text-transform: uppercase; }
-  .step .what { font-size: 46px; line-height: 1.3; font-weight: 600; }
+  .step .what { font-family: var(--serif); font-weight: 600 !important; letter-spacing: -0.03em; font-size: 36px; line-height: 1.3; font-weight: 600; }
   .close-url { font-family: var(--mono); font-size: 44px; margin-top: 60px; color: var(--paper); }
   .close-url div { margin-top: 18px; opacity: .8; font-size: 36px; }
   @media print { .deck { gap: 0; padding: 0; } .frame { box-shadow: none; border-radius: 0; } }
@@ -98,8 +101,18 @@
     <svg width="72" height="72" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="#FAFAF8"/><circle cx="32" cy="32" r="15.2" fill="none" stroke="#16443C" stroke-width="6" stroke-dasharray="70 25.5" stroke-linecap="round"/><circle cx="42.8" cy="21.2" r="6.2" fill="#C2601F"/></svg>
     <span style="font-size:48px">Nullfill</span>
   </div>
-  <h1>An escrow that doesn't strand<br>your money when a transaction<br><span class="gap" style="color:#f0a36c">is never sequenced.</span></h1>
-  <p class="lede">Settlement for Robinhood Chain, in USDG, that stays correct under sequencer screening.</p>
+  <h1>Your transfer<br>didn't fail.<br><em>It never happened.</em></h1>
+  <p class="lede" style="max-width:900px">Nullfill is an escrow for Robinhood Chain that doesn't strand your money when a transaction is screened at the sequencer. It settles in USDG.</p>
+  <svg viewBox="0 0 600 600" width="600" height="600" style="position:absolute;right:110px;top:250px" aria-hidden="true">
+    <circle cx="300" cy="300" r="262" fill="none" stroke="rgba(250,250,248,.18)" stroke-width="1.5" stroke-dasharray="2 8"/>
+    <circle cx="300" cy="300" r="214" fill="none" stroke="#FAFAF8" stroke-width="16" stroke-linecap="round" stroke-dasharray="1150 194" transform="rotate(-62 300 300)"/>
+    <line x1="300" y1="178" x2="300" y2="40" stroke="#f0a36c" stroke-width="3" stroke-linecap="round" stroke-dasharray="4 10" opacity=".8"/>
+    <circle cx="300" cy="46" r="9" fill="#f0a36c" opacity=".55"/>
+    <circle cx="300" cy="300" r="120" fill="rgba(250,250,248,.06)" stroke="rgba(250,250,248,.2)"/>
+    <text x="300" y="248" text-anchor="middle" font-family="Geist" font-weight="600" font-size="15" letter-spacing="3" fill="#f0a36c">SCREENED</text>
+    <text x="300" y="345" text-anchor="middle" font-family="Geist" font-weight="700" font-size="110" fill="#FAFAF8">0</text>
+    <text x="300" y="380" text-anchor="middle" font-family="Geist" font-weight="600" font-size="14" letter-spacing="3" fill="rgba(250,250,248,.7)">BYTES ON CHAIN</text>
+  </svg>
   <div class="foot"><span>Robert Moore</span><span>Arbitrum Open House Singapore · Robinhood Chain</span></div>
 </section></div>
 
@@ -125,7 +138,7 @@
 <!-- P4 -->
 <div class="frame"><section class="slide" id="s4">
   <p class="eyebrow">What's at stake</p>
-  <h2><span class="gap">672.9 million USDG</span> is on Robinhood Chain mainnet.</h2>
+  <h2><em>672.9 million USDG</em> is on Robinhood Chain mainnet.</h2>
   <p class="lede" style="margin-top:0">I read the fund-holding contracts in this buildathon where I could find the source. Here's what I found.</p>
   <div class="stat-row">
     <div class="card"><div class="k">8</div><div class="t">contracts read, function by function</div></div>
@@ -139,7 +152,7 @@
 <!-- P5 -->
 <div class="frame"><section class="slide" id="s5">
   <p class="eyebrow">How Nullfill works</p>
-  <h2>Three rules.</h2>
+  <h2>Three rules. <em>Each one a line you can read.</em></h2>
   <ol class="rules">
     <li><div>Anyone can unwind an expired escrow.<small>Getting money back never depends on one party being able to send a transaction.</small></div></li>
     <li><div>The refund address is named when the escrow opens.<small>Before anyone needs it, and changeable while the escrow is open.</small></div></li>
@@ -168,12 +181,12 @@
 <!-- P7 -->
 <div class="frame"><section class="slide" id="s7">
   <p class="eyebrow">Who pays</p>
-  <h2>The escrow is free. The watcher is the business.</h2>
+  <h2>The escrow is free. <em>The watcher is the business.</em></h2>
   <div class="money">
     <div class="card"><h3>Free, MIT</h3><div class="price">$0</div>
       <p>The escrow. No owner, no fee. Any team can deploy it or copy the three rules.</p></div>
     <div class="card"><h3>Nullfill Watch</h3><div class="price">$99<span> / month per desk</span></div>
-      <p>Next to build. Will keep a screened transaction as a signed receipt, since the sender's error is the only record, and track every deadline and bridge deposit.</p></div>
+      <p>Alpha in the repo today: a signed receipt for every refused transaction, since the sender's error is the only record, and every escrow's deadline. Hosted, with alerts.</p></div>
   </div>
   <div class="foot"><span>For OTC desks, lending protocols, protection notes and payout pools holding USDG on Robinhood Chain</span><span>7</span></div>
 </section></div>
@@ -183,7 +196,8 @@
   <p class="eyebrow">Roadmap</p>
   <h2>From buildathon to mainnet.</h2>
   <div class="road">
-    <div class="step"><div class="dot"></div><div class="when">October 2026</div><div class="what">v1.1 with the exact-deposit guard. Nullfill Watch alpha.</div></div>
+    <div class="step"><div class="dot"></div><div class="when">Now</div><div class="what">Nullfill Watch alpha, in the repo: signed receipts, escrow deadlines.</div></div>
+    <div class="step"><div class="dot"></div><div class="when">October 2026</div><div class="what">v1.1 with the exact-deposit guard. Hosted Watch with alerts.</div></div>
     <div class="step"><div class="dot"></div><div class="when">November 2026</div><div class="what">The three rules as a Solidity library other contracts inherit.</div></div>
     <div class="step"><div class="dot"></div><div class="when">Q1 2027</div><div class="what">Audit, Robinhood Chain mainnet, Arbitrum D.A.O. grant application.</div></div>
   </div>
@@ -196,7 +210,7 @@
     <svg width="96" height="96" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="#FAFAF8"/><circle cx="32" cy="32" r="15.2" fill="none" stroke="#16443C" stroke-width="6" stroke-dasharray="70 25.5" stroke-linecap="round"/><circle cx="42.8" cy="21.2" r="6.2" fill="#C2601F"/></svg>
     <span style="font-size:64px">Nullfill</span>
   </div>
-  <h1 style="font-size:84px">Settlement that stays correct<br>when a transaction never happens.</h1>
+  <h1 style="font-size:92px">Settlement that stays correct<br><em>when a transaction never happens.</em></h1>
   <div class="close-url">iamrobertmoore.github.io/Nullfill<div>github.com/iamrobertmoore/Nullfill</div></div>
   <div class="foot"><span>Robert Moore</span><span>Built for Arbitrum Open House Singapore</span></div>
 </section></div>
