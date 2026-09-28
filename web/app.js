@@ -7,8 +7,14 @@
  */
 
 import { OUTCOME, classify, needsAction, remedy } from './lib/outcome.js';
+import { CHAIN_NAMES, TESTNET, allAssets, verifyAsset } from './lib/assets.js';
 
 const FORCE_INCLUSION_WINDOW_BLOCKS = 100; // illustrative; the contract uses 24 hours of wall clock
+
+const EXPLORER = {
+  46630: 'https://explorer.testnet.chain.robinhood.com',
+  4663: 'https://robinhoodchain.blockscout.com',
+};
 
 const state = {
   rpc: 'https://rpc.testnet.chain.robinhood.com',
@@ -335,6 +341,86 @@ function renderRecovery() {
   });
 }
 
+/* ------------------------------------------------------------------- assets */
+
+/**
+ * Render the settlement asset registry, and check every entry against the chain as it renders.
+ *
+ * The rows go up first from the registry, each marked "checking", and are corrected in place as the
+ * reads come back. That ordering is deliberate: a page that shows nothing until the network answers
+ * looks broken on a slow RPC, and a page that shows a tick before it has looked is worse than broken.
+ */
+async function renderAssets() {
+  const host = $('#assets');
+  host.replaceChildren();
+
+  let chainId = TESTNET;
+  try {
+    chainId = Number.parseInt(await rpcCall('eth_chainId'), 16);
+  } catch {
+    // Unreachable from the browser is normal for many public RPCs, which refuse cross-origin
+    // requests. The registry still renders, and every row says it was not checked.
+    chainId = TESTNET;
+  }
+
+  const assets = allAssets(chainId);
+  const explorer = EXPLORER[chainId];
+
+  host.append(
+    el('div', { className: 'assets-head' }, [
+      el('div', {}, 'Asset'),
+      el('div', {}, 'Contract'),
+      el('div', {}, 'Decimals'),
+      el('div', {}, 'Checked against the chain'),
+    ]),
+  );
+
+  for (const asset of assets) {
+    const verdict = el('span', { className: 'pill warn' }, 'checking');
+
+    const row = el('div', { className: `assets-row${asset.leg === 'cash' ? ' cash' : ''}` }, [
+      el('div', { className: 'asset-name' }, [
+        el('strong', {}, asset.symbol),
+        el('span', { className: `leg ${asset.leg}` }, asset.leg === 'cash' ? 'cash leg' : 'asset leg'),
+        el('span', { className: 'asset-full' }, asset.name),
+      ]),
+      el(
+        'div',
+        { className: 'asset-addr' },
+        explorer
+          ? [el('a', { href: `${explorer}/address/${asset.address}`, target: '_blank', rel: 'noopener' },
+              el('code', {}, asset.address))]
+          : [el('code', {}, asset.address)],
+      ),
+      el('div', { className: 'asset-decimals' }, String(asset.decimals)),
+      el('div', { className: 'asset-verdict' }, [verdict]),
+    ]);
+
+    host.append(row);
+
+    verifyAsset(rpcCall, asset).then((result) => {
+      verdict.className = `pill ${result.checked && result.matches ? 'good' : result.checked ? 'bad' : 'warn'}`;
+
+      if (!result.checked) {
+        verdict.textContent = 'not checked';
+        verdict.title = `The chain could not be reached from this page: ${result.reason}`;
+      } else if (result.matches) {
+        verdict.textContent = `matches: ${result.onChain.symbol}, ${result.onChain.decimals} decimals`;
+      } else {
+        verdict.textContent = 'does not match';
+        verdict.title = result.mismatches.join('; ');
+      }
+    });
+  }
+
+  host.append(
+    el('p', { className: 'assets-note' }, [
+      `Read from ${CHAIN_NAMES[chainId] ?? `chain ${chainId}`} when this page loaded. `,
+      'A hand-written address is a claim. The point of the column on the right is to show whether the claim survives contact with the chain, and to say so when the check could not run at all.',
+    ]),
+  );
+}
+
 /* ------------------------------------------------------------------- wiring */
 
 async function main() {
@@ -350,6 +436,7 @@ async function main() {
   renderLedger();
   renderRecovery();
   probeNetwork();
+  renderAssets();
 
   $('#classify-form').addEventListener('submit', (event) => {
     event.preventDefault();

@@ -416,6 +416,69 @@ section[id] { scroll-margin-top: 84px; }
 .ledger-row.flag { background: var(--bad-soft); }
 .ledger-row.flag:hover { background: #f7ded9; }
 
+/* ---------------------------------------------------------------- assets */
+
+.assets { border-top: 1px solid var(--line); }
+
+.assets-head,
+.assets-row {
+  display: grid;
+  grid-template-columns: 1.5fr 1.7fr 0.6fr 1.5fr;
+  gap: 14px;
+  align-items: center;
+  padding: 13px 4px;
+}
+
+.assets-head {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+  padding-top: 4px;
+}
+
+.assets-row {
+  border-bottom: 1px solid var(--line);
+  font-size: 14.5px;
+}
+
+/* The cash leg is the one the criteria single out, and the one a reader is least likely to have
+   heard of. It gets the quiet emphasis rather than a badge. */
+.assets-row.cash { background: var(--brand-soft); }
+
+.asset-name { display: flex; flex-wrap: wrap; align-items: baseline; gap: 7px; }
+.asset-name strong { font-size: 15px; letter-spacing: 0.01em; }
+
+.leg {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  color: var(--muted);
+}
+
+.leg.cash { border-color: var(--brand); color: var(--brand); background: var(--paper); }
+.asset-full { flex-basis: 100%; font-size: 12.5px; color: var(--muted); }
+
+.asset-addr code { font-family: var(--mono); font-size: 12px; word-break: break-all; }
+.asset-addr a { color: var(--brand); text-decoration: none; }
+.asset-addr a:hover { text-decoration: underline; }
+
+.asset-decimals { font-variant-numeric: tabular-nums; color: var(--ink-soft); }
+
+.asset-verdict .pill { font-size: 12px; }
+
+.assets-note {
+  margin: 16px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--muted);
+  max-width: 76ch;
+}
+
 /* ---------------------------------------------------------------- detail */
 
 .detail-grid {
@@ -538,4 +601,21 @@ section[id] { scroll-margin-top: 84px; }
   .ledger-row .route { grid-area: route; font-size: 13px; }
   .ledger-row .when { grid-area: when; text-align: right; font-size: 13px; }
   .ledger-row .status { grid-area: status; justify-self: end; }
+
+  .assets-head { display: none; }
+
+  .assets-row {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "name verdict"
+      "addr addr"
+      "decimals decimals";
+    gap: 6px 12px;
+  }
+
+  .assets-row .asset-name { grid-area: name; }
+  .assets-row .asset-addr { grid-area: addr; }
+  .assets-row .asset-decimals { grid-area: decimals; font-size: 13px; }
+  .assets-row .asset-decimals::before { content: "decimals "; color: var(--muted); }
+  .assets-row .asset-verdict { grid-area: verdict; justify-self: end; }
 }
