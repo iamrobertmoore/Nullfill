@@ -20,3 +20,18 @@ bracket_spacing = false
 
 [profile.default.fuzz]
 runs = 256
+
+# The fork test executes real chain code, and the contracts it reads were compiled with opcodes newer
+# than the entry's own deployment target. Paris refuses PUSH0 with `NotActivated`, which surfaces as
+# "EvmError: NotActivated" on a plain `symbol()` call against a live token, and reads like the test is
+# broken when the EVM is simply refusing an instruction. This profile raises the version for that one
+# test. It is not the profile anything is deployed with.
+#
+#   FOUNDRY_PROFILE=fork ROBINHOOD_RPC=https://rpc.testnet.chain.robinhood.com \
+#     forge test --match-path test/Fork.t.sol -vv
+#
+# The default stays Paris deliberately. The live Nullfill is Paris bytecode, it is verified working at
+# 0x71029fac49E9b45CCC377812aEc01509FFD383A1, and Paris bytecode runs on any chain at or above it.
+# Raising the deployment target would mean redeploying to gain nothing.
+[profile.fork]
+evm_version = "cancun"

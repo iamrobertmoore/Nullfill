@@ -29,6 +29,10 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 ///         address before they need it.
 ///      3. Orders are keyed by an external reference and every state transition is one way. A retried
 ///         transaction cannot execute twice.
+///      4. A deposit must arrive exactly as asked. The contract measures the balance delta rather
+///         than trusting the amount it was called with, so an asset that delivers less than it was
+///         asked to cannot leave one order spending another order's balance. This is what makes
+///         "asset agnostic" a fact rather than a hope.
 ///
 ///      One limitation is deliberate and documented rather than hidden. Screening happens before
 ///      execution, so the EVM cannot observe it and `try`/`catch` cannot help. If the nominated
@@ -84,6 +88,7 @@ contract Nullfill is ReentrancyGuard {
     error NotAParty(bytes32 ref, address caller);
     error ZeroAddress();
     error ZeroAmount();
+    error TransferNotExact(uint256 expected, uint256 received);
 
     /// @notice Emitted when tokens are escrowed.
     event Opened(
@@ -149,7 +154,17 @@ contract Nullfill is ReentrancyGuard {
             status: Status.Open
         });
 
+        // Measure what actually arrived rather than trusting the argument. The escrow records one
+        // amount and pays out that amount, so a token that delivers less than it was asked to would
+        // leave this order short and let it spend the next order's balance. A fee-on-transfer token,
+        // a rebasing token and a token with a transfer hook all land here. Reverting is the honest
+        // outcome: the desk asked to escrow exactly `amount`, and if the asset cannot deliver exactly
+        // `amount` then this escrow must not open. Every other failure in this contract is fail
+        // closed, and this is the same rule applied to the deposit.
+        uint256 before = token.balanceOf(address(this));
         token.safeTransferFrom(msg.sender, address(this), amount);
+        uint256 received = token.balanceOf(address(this)) - before;
+        if (received != amount) revert TransferNotExact(amount, received);
 
         emit Opened(ref, msg.sender, beneficiary, address(token), amount, deadline, recovery);
     }
