@@ -24,6 +24,17 @@ Both numbers are sourced rather than estimated. The zero is a property of the me
 | [Open a screened escrow](https://iamrobertmoore.github.io/Nullfill/#detail-panel) | The escrow is untouched and still open. Nothing was spent, and nothing is recorded anywhere on chain. |
 | [A bridge deposit that arrived nowhere](https://iamrobertmoore.github.io/Nullfill/#recovery-panel) | ETH left Ethereum, no credit landed on Robinhood Chain, and no system on either chain will ever mention it. |
 
+## Real USDG, through the live contract
+
+Two orders, 50 USDG each, from the Paxos testnet faucet, through the deployed contract on 28 September 2026. Every row is a transaction you can open.
+
+| Order | What happened | Transactions |
+|---|---|---|
+| 1 | Opened, then settled. The counterparty ends up holding the 50 USDG and the order is closed. | [open](https://explorer.testnet.chain.robinhood.com/tx/0xaf53bd4607b7ef088d9d80c02701d742f51c7f7b2518e9e2694d57fd9f0573f4) · [settle](https://explorer.testnet.chain.robinhood.com/tx/0xb3c300d0c5040e7d1023376fb860cdd8f3e1abf7cc8aa06104d7b713d3b8d173) |
+| 2 | Opened with a recovery address nominated up front. The contract will not let anyone unwind it until the 24 hour window has passed, at 15:30 BST on 29 September. After that, a wallet that has never touched the order unwinds it, and the USDG goes to the recovery address, not to whoever pressed the button. | [open](https://explorer.testnet.chain.robinhood.com/tx/0x1fa994e04fea8a82ab3550a12529f2c6c2907911e5eeede870ff527680265bfe) |
+
+Order 2 is the whole argument in one transaction. If the funder had been screened, the funds would still come home, because recovery never needed the funder to send anything.
+
 ## The problem, in the chain's own words
 
 This is not a hypothetical I invented. Robinhood Chain documents the behaviour in the present tense, in a page about how the chain differs from Ethereum:
@@ -64,7 +75,7 @@ No contract can fix this, because the failure is on the other side of the bridge
 
 A settlement on this chain has two legs. Tokenised equity one way, dollars the other. The dollars are **USDG**, and that is not a choice made here to please anyone. It is the dollar Robinhood Chain names on its own ecosystem page, under Stablecoin, supplied by Paxos. The same page names TRM Labs as the compliance and risk management partner, so the chain's own partner list carries both the filter and the dollar.
 
-The contract is asset agnostic. `open()` takes any `IERC20`, so nothing changes if a desk settles in a different dollar. What does not come for free is knowing which contract is the real one, so [`contracts/src/RobinhoodChain.sol`](contracts/src/RobinhoodChain.sol) pins the canonical addresses for both chains and the five verified testnet equities. Every address in it was read back from the chain rather than copied from a page.
+The contract is asset agnostic for any token that transfers exactly what it is asked to. `open()` takes any `IERC20`, so nothing changes if a desk settles in a different dollar. Tokens that keep a fee on transfer are the exception, see the limits below. What does not come for free is knowing which contract is the real one, so [`contracts/src/RobinhoodChain.sol`](contracts/src/RobinhoodChain.sol) pins the canonical addresses for both chains and the five verified testnet equities. Every address in it was read back from the chain rather than copied from a page.
 
 **USDG is six decimals, not eighteen.** A desk escrowing 2,500 USDG is moving the integer `2500000000`, and a rounding step anywhere in that path is real money. So the property is stated once and fuzzed:
 
@@ -72,13 +83,15 @@ The contract is asset agnostic. `open()` takes any `IERC20`, so nothing changes 
 
 Two limits, stated rather than discovered.
 
-**USDG cannot be minted by this project, and the route to acquiring testnet USDG is not documented.** The token has a role gated `mint` and no public one, and the chain's own docs list no faucet. The official faucet at `faucet.testnet.chain.robinhood.com` sits behind a bot check that could not be read from here, so whether it dispenses USDG is unverified. USDG is certainly live and moving on this chain, with 3,850 holders and 78,877 transfers as of 28 September, and an address was observed handing 100 USDG to a fresh wallet every few minutes. Somebody has a route. It is not one this project can prove. So the test suite uses a six decimal stand-in that mirrors the real interface, and [`test/Fork.t.sol`](contracts/test/Fork.t.sol) reads the real contract on chain.
+**Testnet USDG comes from the Paxos faucet, 100 per wallet per day.** The token itself has a role gated `mint` and no public one, so this project cannot create USDG, only receive it. The two orders above used faucet USDG. The unit tests use a six decimal stand-in that mirrors the real interface, and [`test/Fork.t.sol`](contracts/test/Fork.t.sol) reads the real contract on chain.
 
 **A hand-written decimal count is a claim, not a constant.** A token can be upgraded. The fork test re-reads every entry in the registry against a live chain and fails if any of them has moved.
 
 ## What this will not claim
 
-Four limits, stated here rather than discovered by a reviewer.
+Five limits, stated here rather than discovered by a reviewer.
+
+**The deployed escrow assumes the token transfers exactly.** `open()` records the amount it was asked to escrow and does not measure what arrived. A token that keeps a fee on transfer would leave that order recorded whole while the escrow held less. USDG and the five testnet equities all transfer exactly, so nothing this entry settles in is affected. The fix, a balance delta check, is written and tested, and it ships with the next deployment rather than a redeploy in the last week of the buildathon. [`test/RobinhoodChain.t.sol`](contracts/test/RobinhoodChain.t.sol) pins the current behaviour down so the limit is stated by the suite as well as here.
 
 **A failure receipt cannot tell you why it failed.** A contract revert and a transaction that arrived by force inclusion and was forcibly failed both produce a receipt with a failure status, no logs, and burned gas. Nothing in the receipt separates them.
 
@@ -106,7 +119,7 @@ git submodule update --init --recursive
 forge test
 ```
 
-45 tests, four of them fuzzed, all passing. Four more run against a live chain and report as **skipped** rather than passed when there is no RPC, which is deliberate: a network check that quietly reports success when it did not run reads as evidence.
+46 tests, four of them fuzzed, all passing. I also mutated the contract fourteen ways, one change at a time: removing the deadline check, letting only the funder unwind, sending the refund to the funder instead of the nominated address, and so on. Thirteen were caught by at least one test. The one that survived was halving the 24 hour window, because every test read the window from the contract instead of stating it. There is now a test that states it. Four more run against a live chain and report as **skipped** rather than passed when there is no RPC, which is deliberate: a network check that quietly reports success when it did not run reads as evidence.
 
 ```bash
 FOUNDRY_PROFILE=fork ROBINHOOD_RPC=https://rpc.testnet.chain.robinhood.com forge test --match-path test/Fork.t.sol
@@ -162,7 +175,8 @@ Every number and address above can be checked rather than believed. This table i
 | The contract is deployed and the window is 24 hours | `cast call 0x71029fac49E9b45CCC377812aEc01509FFD383A1 "FORCE_INCLUSION_WINDOW()(uint64)" --rpc-url https://rpc.testnet.chain.robinhood.com` | `86400` |
 | USDG is at that address and is six decimals | `cast call 0x7E955252E15c84f5768B83c41a71F9eba181802F "decimals()(uint8)" --rpc-url https://rpc.testnet.chain.robinhood.com` | `6` |
 | Every address in the registry still matches the chain | `FOUNDRY_PROFILE=fork ROBINHOOD_RPC=https://rpc.testnet.chain.robinhood.com forge test --match-path test/Fork.t.sol` | 3 passing |
-| The contract's own test suite | `cd contracts && forge test` | 45 passing, 4 skipped |
+| The contract's own test suite | `cd contracts && forge test` | 46 passing, 4 skipped |
+| A real USDG order settled | `cast call 0x71029fac49E9b45CCC377812aEc01509FFD383A1 "statusOf(bytes32)(uint8)" 0xfad69ced7f9b1bf95844435440a669de0644dfbf7a378f571f412529e599acee --rpc-url https://rpc.testnet.chain.robinhood.com` | `2`, which is Settled |
 | The console's own test suite | `cd web && npm test` | 22 passing |
 | The asset panel really checks the chain | Open the deployed console and read the right hand column | Six rows, each saying what the chain said |
 | The screening behaviour is real | [`docs/reproduction.md`](docs/reproduction.md), run the command in it | `-32000 Transaction rejected by chain policy` |
@@ -180,9 +194,9 @@ Claims this repository published and then changed. Kept because a correction is 
 
 **28 September 2026.** The test count above said 29. It was 29 when written and 44 by the time anyone read it, because a second test file was added. A count is only meaningful with a date attached, and it had none.
 
-**28 September 2026.** The deposit path accepted an amount without checking what arrived, so a fee on transfer token would have left one order able to spend another order's balance. Found while writing the USDG tests. The contract now measures the balance delta and reverts on a mismatch, and the reasoning is in the commit that made the change.
+**28 September 2026.** The deposit path accepts an amount without checking what arrived, so a fee on transfer token would leave one order able to spend another order's balance. Found while writing the USDG tests. I wrote the fix, a balance delta check, and then took it back out of this repository, because shipping it meant redeploying the contract in the last week of the buildathon and the repository would otherwise no longer match its own deployment. The limit is now stated under "What this will not claim", pinned by a test, and the fix ships with the next deployment.
 
-**28 September 2026.** An earlier internal note stated that no faucet dispenses USDG on this chain. That is not supported. The official faucet sits behind a bot check that could not be read, and an address was observed distributing 100 USDG to fresh wallets every few minutes. The claim was removed rather than softened.
+**28 September 2026.** An earlier version of this README said the route to testnet USDG was undocumented. It is documented: Paxos runs a testnet faucet that covers Robinhood Chain, 100 USDG per wallet per day. The two live orders above were funded from it.
 
 ## Where this goes next
 
