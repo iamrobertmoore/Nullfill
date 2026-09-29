@@ -11,6 +11,8 @@
  *   escrows   List every Nullfill escrow an address is party to, with its deadline and whether
  *             anyone may unwind it yet.
  *   verify    Check a receipt: format, transaction hash, and the watcher's signature.
+ *   filtered  Ask the chain whether its compliance filter refused a transaction, from the registry
+ *             at 0x74. Only refusals that reached the chain through the delayed inbox are listed.
  *   keygen    Create the watcher's Ed25519 key, outside the repository.
  *
  * No dependencies. Node 22 or later.
@@ -24,6 +26,7 @@ import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { receiptBody, signingBytes, verifyReceipt, toHex } from '../web/lib/receipt.js';
 import { decodeDescribe, describeCall, NULLFILL } from '../web/lib/orders.js';
+import { decodeBool, isFilteredCall } from '../web/lib/filtered.js';
 
 const DEFAULT_RPC = 'https://rpc.testnet.chain.robinhood.com';
 const DEFAULT_KEY = join(homedir(), '.nullfill-watch', 'watcher-key.pem');
@@ -135,6 +138,22 @@ export async function escrowsFor(address, upstream = DEFAULT_RPC) {
 
 /* -------------------------------------------------------------------- cli */
 
+/** What the chain itself records about a hash: is it in the filter registry, and was it included. */
+export async function filteredStatus(hash, upstream = DEFAULT_RPC, call = rpc) {
+  const [flag, receipt] = await Promise.all([
+    call(upstream, 'eth_call', [isFilteredCall(hash), 'latest']),
+    call(upstream, 'eth_getTransactionReceipt', [hash]),
+  ]);
+  if (flag.error) throw new Error(`the RPC could not read the 0x74 registry: ${flag.error.message}`);
+  const r = receipt.result;
+  return {
+    filtered: decodeBool(flag.result),
+    included: Boolean(r),
+    failed: r ? r.status === '0x0' : null,
+    gasUsed: r ? Number.parseInt(r.gasUsed, 16) : 0,
+  };
+}
+
 function arg(name, fallback) {
   const i = process.argv.indexOf(`--${name}`);
   return i > -1 ? process.argv[i + 1] : fallback;
@@ -192,7 +211,23 @@ async function main() {
     return;
   }
 
-  console.log('usage: nullfill-watch <keygen|proxy|send|escrows|verify> [--rpc URL] [--port N] [--out DIR] [--raw 0x..] [--address 0x..]');
+  if (cmd === 'filtered') {
+    const hash = arg('hash');
+    if (!hash) throw new Error('--hash is required');
+    const s = await filteredStatus(hash, upstream);
+    if (s.filtered) {
+      console.log(s.included
+        ? `filtered: the chain's registry lists it, and it was included and ${s.failed ? 'failed' : 'did not fail'} (gas used ${s.gasUsed})`
+        : "filtered: the chain's registry lists it, and it has not been included yet. When it is, it will be failed.");
+    } else {
+      console.log(s.included
+        ? `not filtered: the registry does not list it, and it was included (${s.failed ? 'failed' : 'succeeded'})`
+        : 'not in the registry and not on chain. If it was refused at the sequencer, only the sender saw it; that is what `proxy` records.');
+    }
+    return;
+  }
+
+  console.log('usage: nullfill-watch <keygen|proxy|send|escrows|verify|filtered> [--rpc URL] [--port N] [--out DIR] [--raw 0x..] [--address 0x..] [--hash 0x..]');
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {

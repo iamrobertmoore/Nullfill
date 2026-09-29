@@ -16,6 +16,8 @@ So when a settlement does not complete, Ines is left with a question she cannot 
 
 **And it is not a small pool of money.** 672.9 million USDG sits on Robinhood Chain mainnet, read from the token contract at block 74,889,519 on 28 September 2026. Every escrow, loan and payout that holds it assumes a transaction either lands or reverts.
 
+**And the filter is switched on, on mainnet.** Robinhood Chain keeps a registry of the transactions its compliance filter refused, at the ArbOS precompile `0x74`, and anyone can read it. Between 30 June and 16 September 2026 it recorded 1,355 of them, across 6,096 registration events from a single registrar. Every one I sampled was included and failed, which is how a filtered transaction that comes in through the delayed inbox ends. And those are only the ones that took that route. A transaction refused at the sequencer's door isn't counted anywhere.
+
 Both numbers in bold above are sourced rather than estimated. The zero is a property of the mechanism: the transaction is rejected before sequencing, so there is no receipt to find. The 24 hours is the Arbitrum force inclusion window, the period during which a transaction that was screened can still arrive by another route. Unwinding an escrow before that window closes is not caution, it is a bug, because the late arrival would settle on top of the refund.
 
 ## Try this
@@ -59,6 +61,8 @@ The mechanism is Arbitrum's, introduced in ArbOS 61 and off by default. Robinhoo
 
 I reproduced it locally before writing any Solidity, on a Nitro testnode with the filter genuinely enabled. A transaction from a restricted address is rejected with `-32000 Transaction rejected by chain policy`. A transaction to a restricted address is rejected the same way. A balance query on a restricted address works perfectly. A control transaction between two unrestricted addresses succeeds. The full setup, including the three places where Arbitrum's documentation is wrong, is in [`docs/reproduction.md`](docs/reproduction.md).
 
+Then I checked mainnet itself. The second layer, the one that fails a filtered transaction arriving through the delayed inbox, is live there, and it leaves a record: a failed receipt, and the transaction's hash in the registry at `0x74`. The console's classifier reads that registry, so paste a mainnet hash and it tells you whether the chain filtered it. The first layer, the sequencer's door, still leaves nothing, which is the case Nullfill is built for.
+
 ## The failure the contract cannot fix, and the monitor that can
 
 There is one path where this gets worse than a stalled settlement, and Arbitrum's own security notes describe it:
@@ -82,6 +86,14 @@ Point a wallet or script at `http://127.0.0.1:8646`. Everything passes straight 
 ```bash
 node watch/nullfill-watch.mjs escrows --address 0x1f73e798AcC33eb93Eb61825591d9b73C7Ee7D4A
 node watch/nullfill-watch.mjs verify web/data/sample-receipt.json
+```
+
+And for the refusals the chain does record, it asks the chain:
+
+```bash
+node watch/nullfill-watch.mjs filtered --rpc https://rpc.mainnet.chain.robinhood.com \
+  --hash 0x3557fe4ab79553ae32f49af938d6596335aa42d68742bdfc73490d2261e3dbf5
+# filtered: the chain's registry lists it, and it was included and failed (gas used 20000000)
 ```
 
 `escrows` lists every Nullfill escrow an address is party to, read from the contract's events, with how long until anyone may unwind it. `verify` checks a receipt's format, that its hash really is the keccak256 of its raw transaction, and the signature.
@@ -124,9 +136,9 @@ Six limits, stated here rather than discovered by a reviewer.
 
 **The deployed escrow assumes the token transfers exactly.** `open()` records the amount it was asked to escrow and does not measure what arrived. A token that keeps a fee on transfer would leave that order recorded whole while the escrow held less. USDG and the five testnet equities all transfer exactly, so nothing this entry settles in is affected. The fix, a balance delta check, is written and tested, and it ships with the next deployment rather than a redeploy in the last week of the buildathon. [`test/RobinhoodChain.t.sol`](contracts/test/RobinhoodChain.t.sol) pins the current behaviour down so the limit is stated by the suite as well as here.
 
-**A failure receipt cannot tell you why it failed.** A contract revert and a transaction that arrived by force inclusion and was forcibly failed both produce a receipt with a failure status, no logs, and burned gas. Nothing in the receipt separates them.
+**The chain only records some refusals.** A filtered transaction that comes in through the delayed inbox is included, failed, and listed in the registry at `0x74`, so the console can name it. One refused at the sequencer's door is recorded nowhere.
 
-**Screening is only directly observable at submit time.** If you did not send the transaction, you can never be certain it was screened rather than dropped. From outside, both leave nothing at all, and the console says so instead of guessing.
+**A refusal at the door is only observable at submit time.** If you did not send the transaction, you can never be certain it was screened rather than dropped. From outside, both leave nothing at all, and the console says so instead of guessing.
 
 **The restricted address list is private, and should be.** Addresses are stored as salted hashes precisely so the list cannot be enumerated. Nothing here tries to reverse it and nothing here can tell you whether a given address is on it.
 
@@ -194,7 +206,7 @@ The mechanism is not mine. Arbitrum documents compliance filtering, Robinhood Ch
 
 **Deadline based release already exists.** Stagepay releases escrowed milestones to a freelancer when a review window passes in silence, and its suite fuzzes fund conservation over 2,000 runs. Nullfill has the same shape and the same test discipline, and the difference is the argument rather than the mechanism. Silence past a deadline is treated there as a decision. The claim here is that on this chain an absent transaction is not a decision, and acting on it before the force inclusion window closes is the bug.
 
-**What does not exist** is anything that treats non-inclusion as a first class settlement outcome. A keyword sweep of the 90 projects in this buildathon's field on 28 September 2026 returns zero hits for `force inclusion`, `non-inclusion`, `restricted address`, `censorship` and `settlement finality`. Every escrow on every chain assumes a submitted transaction either lands or reverts. This one handles the third case, where it never happened, and names the two things that follow: recovery must not depend on the screened party transacting, and no deadline may sit inside the force inclusion window.
+**What does not exist** is anything that treats non-inclusion as a first class settlement outcome. A keyword sweep of the 96 projects in this buildathon's field on 29 September 2026 returns zero hits for `force inclusion`, `non-inclusion`, `restricted address`, `censorship` and `settlement finality`. One other entry works with the compliance filter, reading the same registry to verify corporate action updates. None treats a missing transaction as a settlement outcome. Every escrow on every chain assumes a submitted transaction either lands or reverts. This one handles the third case, where it never happened, and names the two things that follow: recovery must not depend on the screened party transacting, and no deadline may sit inside the force inclusion window.
 
 That is the claim. It is narrower than "nobody has thought about compliance on this chain", which would be false, and it is the one the code supports.
 
@@ -210,8 +222,9 @@ Every number and address above can be checked rather than believed. This table i
 | Every address in the registry still matches the chain | `FOUNDRY_PROFILE=fork ROBINHOOD_RPC=https://rpc.testnet.chain.robinhood.com forge test --match-path test/Fork.t.sol` | 3 passing |
 | The contract's own test suite | `cd contracts && forge test` | 46 passing, 4 skipped |
 | A real USDG order settled | `cast call 0x71029fac49E9b45CCC377812aEc01509FFD383A1 "statusOf(bytes32)(uint8)" 0xfad69ced7f9b1bf95844435440a669de0644dfbf7a378f571f412529e599acee --rpc-url https://rpc.testnet.chain.robinhood.com` | `2`, which is Settled |
-| The console's own test suite | `cd web && npm test` | 24 passing |
-| The watcher's test suite | `cd watch && npm test` | 4 passing |
+| The console's own test suite | `cd web && npm test` | 26 passing |
+| Mainnet's filter refused a real transfer | `cast call 0x0000000000000000000000000000000000000074 "isTransactionFiltered(bytes32)(bool)" 0x3557fe4ab79553ae32f49af938d6596335aa42d68742bdfc73490d2261e3dbf5 --rpc-url https://rpc.mainnet.chain.robinhood.com` | `true`. The receipt for that hash shows it included and failed. |
+| The watcher's test suite | `cd watch && npm test` | 5 passing |
 | A real refusal, signed and checkable | `node watch/nullfill-watch.mjs verify web/data/sample-receipt.json` | three `ok` lines |
 | The asset panel really checks the chain | Open the deployed console and read the right hand column | Six rows, each saying what the chain said |
 | The screening behaviour is real | [`docs/reproduction.md`](docs/reproduction.md), run the command in it | `-32000 Transaction rejected by chain policy` |
@@ -224,6 +237,8 @@ above name the skips rather than hiding them.
 ## Corrections
 
 Claims this repository published and then changed. Kept because a correction is more useful than a silent edit, and because the list is the honest measure of how much of the rest survived checking.
+
+**29 September 2026.** This README said a failure receipt cannot tell you why it failed. For the filter's own refusals on mainnet, it can: the chain lists them at `0x74`, and the classifier now reads that list. The limit is rewritten above as what is still true, that a refusal at the sequencer's door leaves no record at all.
 
 **28 September 2026.** This README said the local reproduction was "written up in the repository history". It was not. No commit and no file mentioned it. The writeup now exists at [`docs/reproduction.md`](docs/reproduction.md), and the sentence points at it. The claim was true about the work and false about the record.
 

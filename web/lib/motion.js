@@ -178,8 +178,8 @@ function countUp(el) {
   (function frame(now) {
     const t = Math.min(1, (now - start) / dur);
     const e = 1 - Math.pow(1 - t, 4);
-    el.textContent = (to * e).toFixed(dec);
-    if (t < 1) requestAnimationFrame(frame); else el.textContent = to.toFixed(dec);
+    el.textContent = Number((to * e).toFixed(dec)).toLocaleString("en-GB", { minimumFractionDigits: dec, maximumFractionDigits: dec });
+    if (t < 1) requestAnimationFrame(frame); else el.textContent = to.toLocaleString("en-GB", { minimumFractionDigits: dec, maximumFractionDigits: dec });
   })(start);
 }
 

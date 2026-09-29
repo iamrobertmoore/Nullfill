@@ -693,3 +693,9 @@ input, select, button { font: inherit; }
 .run { margin: 20px 0 0; padding: 14px 16px; border-radius: 12px; background: #0f1a17; color: #d9e4df; font: 12.5px/1.7 var(--mono); white-space: pre-wrap; word-break: break-word; }
 .run .c { color: #7f948c; }
 @media (max-width: 860px) { .watch-grid { grid-template-columns: minmax(0, 1fr); } .receipt { grid-template-columns: minmax(0, 1fr); } }
+
+.measured { display: grid; grid-template-columns: auto 1fr; gap: 28px; align-items: center; margin: 34px 0 30px; padding: 26px 28px; border-radius: var(--radius-lg); background: rgba(246, 245, 240, 0.06); border: 1px solid rgba(246, 245, 240, 0.14); }
+.measured b { font: 600 clamp(56px, 6vw, 88px) / 1 var(--serif); letter-spacing: -0.05em; color: #f0a36c; font-variant-numeric: tabular-nums; }
+.measured p { margin: 0; color: rgba(246, 245, 240, 0.82); font-size: 16px; max-width: 70ch; }
+.measured code { color: #f6f5f0; }
+@media (max-width: 640px) { .measured { grid-template-columns: 1fr; gap: 10px; } }

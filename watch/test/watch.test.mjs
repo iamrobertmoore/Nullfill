@@ -4,7 +4,7 @@ import { createServer } from 'node:http';
 import { mkdtempSync, readdirSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { loadOrCreateKey, signReceipt, startProxy, submitAndRecord } from '../nullfill-watch.mjs';
+import { filteredStatus, loadOrCreateKey, signReceipt, startProxy, submitAndRecord } from '../nullfill-watch.mjs';
 import { receiptBody, verifyReceipt } from '../../web/lib/receipt.js';
 import { keccak256 } from '../../web/lib/keccak.js';
 
@@ -82,4 +82,20 @@ test('the proxy forwards everything and writes a receipt for a refused transacti
   assert.equal((await verifyReceipt(receipt)).ok, true);
 
   proxy.close(); upstream.close();
+});
+
+test('filtered reads the 0x74 registry and the receipt, and keeps the two apart', async () => {
+  const hash = '0x3557fe4ab79553ae32f49af938d6596335aa42d68742bdfc73490d2261e3dbf5';
+  const seen = [];
+  const fake = (answers) => async (_upstream, method, params) => {
+    seen.push({ method, params });
+    return { jsonrpc: '2.0', id: 1, result: answers[method] };
+  };
+  const one = '0x' + '0'.repeat(63) + '1';
+  const refused = await filteredStatus(hash, 'test', fake({ eth_call: one, eth_getTransactionReceipt: { status: '0x0', gasUsed: '0x1312d00' } }));
+  assert.deepEqual(refused, { filtered: true, included: true, failed: true, gasUsed: 20_000_000 });
+  assert.equal(seen[0].params[0].to, '0x0000000000000000000000000000000000000074');
+  assert.equal(seen[0].params[0].data, '0x85c733a4' + hash.slice(2));
+  const absent = await filteredStatus(hash, 'test', fake({ eth_call: '0x' + '0'.repeat(64), eth_getTransactionReceipt: null }));
+  assert.deepEqual(absent, { filtered: false, included: false, failed: null, gasUsed: 0 });
 });

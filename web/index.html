@@ -154,6 +154,10 @@
       <h2><b class="count" data-to="672.9" data-dec="1">672.9</b> million USDG sits on Robinhood Chain mainnet.</h2>
       <p>Read from the token contract at block 74,889,519 on 28 September 2026. Every escrow, loan and payout holding it assumes a transaction either lands or reverts.</p>
     </div>
+    <div class="measured reveal">
+      <b class="count" data-to="1355">1,355</b>
+      <p>transactions the compliance filter refused on Robinhood Chain mainnet between 30 June and 16 September 2026, counted from the chain's own registry at <code>0x74</code>. Every one I sampled was included and failed. And those are only the ones that came in through the delayed inbox. A transaction refused at the sequencer's door leaves no count at all.</p>
+    </div>
     <p class="survey-intro reveal">So I read the fund-holding contracts in this buildathon whose source I could find, one function at a time.</p>
     <div class="survey">
       <div class="stat reveal"><b class="count" data-to="8">8</b><span>contracts read</span></div>
@@ -196,6 +200,7 @@
       <span class="presets-label">Live</span>
       <button type="button" data-live="0xb3c300d0c5040e7d1023376fb860cdd8f3e1abf7cc8aa06104d7b713d3b8d173">The real USDG settle</button>
       <button type="button" data-live="0x1111111111111111111111111111111111111111111111111111111111111111">A hash with no trace</button>
+      <button type="button" data-live="0x3557fe4ab79553ae32f49af938d6596335aa42d68742bdfc73490d2261e3dbf5" data-net="https://rpc.mainnet.chain.robinhood.com">A transfer the chain filtered (mainnet)</button>
       <span class="presets-label">Worked examples</span>
       <button type="button" data-case="screened">A screened transfer</button>
       <button type="button" data-case="pending">Inside the window</button>
@@ -326,7 +331,7 @@ node watch/nullfill-watch.mjs escrows --address 0x…</code></pre>
     <h2>Limits, <em>stated before anyone finds them.</em></h2>
   </div>
   <ul class="limits reveal">
-    <li><strong>A failure receipt can't tell you why.</strong> A revert and a force-included transaction that was forcibly failed both leave a failure receipt, no logs and burned gas.</li>
+    <li><strong>The chain only records some refusals.</strong> A force-included transaction the filter refused is listed at <code>0x74</code>, and the classifier checks it. A transaction refused at the sequencer's door is listed nowhere.</li>
     <li><strong>Screening is only directly visible at submit time.</strong> If you didn't send it, you can't be certain it was screened rather than never sent.</li>
     <li><strong>The restricted list is private.</strong> Addresses are stored as salted hashes. Nothing here tries to reverse it.</li>
     <li><strong>Nullfill can't route around screening.</strong> Every transfer it makes is screened like any other. It changes who has to act, and when it's safe to act.</li>

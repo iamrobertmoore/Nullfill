@@ -11,6 +11,7 @@ import { CHAIN_NAMES, TESTNET, allAssets, verifyAsset } from './lib/assets.js';
 import { LIVE_ORDERS, describeCall, decodeDescribe } from './lib/orders.js';
 import { startMotion, setWindowProgress } from './lib/motion.js';
 import { verifyReceipt } from './lib/receipt.js';
+import { isFilteredCall, decodeBool, filteredVerdict } from './lib/filtered.js';
 
 const FORCE_INCLUSION_WINDOW_BLOCKS = 100; // illustrative; the contract uses 24 hours of wall clock
 
@@ -248,6 +249,20 @@ async function classifyHash(hash) {
         ]),
       ]),
     );
+    return;
+  }
+
+  // Ask the chain's own registry first. A hash the compliance filter refused through the delayed
+  // inbox is listed at 0x74, which turns "failed, reason unknown" into a certain answer.
+  let filtered = false;
+  try {
+    filtered = decodeBool(await rpcCall('eth_call', [isFilteredCall(trimmed), 'latest']));
+  } catch {
+    filtered = false; // older chains have no such precompile; fall through to the receipt
+  }
+  if (filtered) {
+    const v = filteredVerdict({ included: Boolean(receipt), gasUsed: receipt ? Number.parseInt(receipt.gasUsed, 16) : 0 });
+    renderVerdict(v, 'live RPC and the 0x74 registry');
     return;
   }
 
@@ -614,8 +629,8 @@ async function main() {
   $('#presets').addEventListener('click', (event) => {
     const live = event.target.closest('button[data-live]');
     if (live) {
-      // Live presets always ask testnet, where the real orders are.
-      $('#rpc').value = 'https://rpc.testnet.chain.robinhood.com';
+      // Live presets ask the chain their example lives on: testnet for the orders, mainnet for the filtered transfer.
+      $('#rpc').value = live.dataset.net || 'https://rpc.testnet.chain.robinhood.com';
       state.rpc = $('#rpc').value;
       $('#txhash').value = live.dataset.live;
       classifyHash(live.dataset.live);
