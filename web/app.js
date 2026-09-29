@@ -511,7 +511,9 @@ function renderOrders() {
         const bar = el('i');
         const left = el('span', { className: 'countdown' }, '');
         const windowLi = li(o.status === 'Open' && !o.unwindable ? 'now' : 'done', 'The 24 hour window. ', [
-          el('span', {}, 'Nobody can unwind it yet, and the contract refuses anyone who tries.'),
+          el('span', {}, o.status === 'Open' && !o.unwindable
+            ? 'Nobody can unwind it yet, and the contract refuses anyone who tries.'
+            : 'Nobody could unwind it until the window closed, and the contract refused anyone who tried.'),
           el('div', { className: 'window-bar' }, [bar]),
           el('div', { className: 'window-meta' }, [el('span', {}, `unwindable from ${new Date(o.deadline * 1000).toUTCString().slice(17, 22)} UTC`), left]),
         ]);
@@ -520,6 +522,12 @@ function renderOrders() {
         const unwindTx = order.txs.find(([n]) => n === 'unwind');
         if (o.status === 'Unwound') {
           steps.append(li('done', 'Unwound by a wallet that never touched the order. The USDG went to the recovery address. ', unwindTx ? [txLink('unwind', unwindTx[1])] : []));
+          const held = el('span', { className: 'live-val' }, 'reading');
+          steps.append(li('done', 'The recovery address holds it now: ', [held]));
+          const bal = '0x70a08231' + o.unwindTo.slice(2).padStart(64, '0'); // balanceOf(address)
+          testnetCall({ to: o.token, data: bal })
+            .then((hex) => { held.textContent = `${Number(BigInt(hex)) / 1e6} USDG, read live from the token.`; })
+            .catch(() => { held.textContent = 'could not read the balance from this page.'; });
         } else {
           steps.append(li(o.unwindable ? 'now' : '', o.unwindable ? 'Open to anyone. Any wallet can unwind it now.' : 'Then anyone can unwind it, and the USDG goes to the recovery address.'));
         }

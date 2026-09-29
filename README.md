@@ -30,12 +30,12 @@ Both numbers in bold above are sourced rather than estimated. The zero is a prop
 
 ## Real USDG, through the live contract
 
-Two orders, 50 USDG each, from the Paxos testnet faucet, through the deployed contract on 28 September 2026. Every row is a transaction you can open.
+Two orders, 50 USDG each, from the Paxos testnet faucet, through the deployed contract on 28 and 29 September 2026. Every row is a transaction you can open.
 
 | Order | What happened | Transactions |
 |---|---|---|
 | 1 | Opened, then settled. The counterparty ends up holding the 50 USDG and the order is closed. | [open](https://explorer.testnet.chain.robinhood.com/tx/0xaf53bd4607b7ef088d9d80c02701d742f51c7f7b2518e9e2694d57fd9f0573f4) · [settle](https://explorer.testnet.chain.robinhood.com/tx/0xb3c300d0c5040e7d1023376fb860cdd8f3e1abf7cc8aa06104d7b713d3b8d173) |
-| 2 | Opened with a recovery address nominated up front. The contract will not let anyone unwind it until the 24 hour window has passed, at 15:30 BST on 29 September. After that, a wallet that has never touched the order unwinds it, and the USDG goes to the recovery address, not to whoever pressed the button. | [open](https://explorer.testnet.chain.robinhood.com/tx/0x1fa994e04fea8a82ab3550a12529f2c6c2907911e5eeede870ff527680265bfe) |
+| 2 | Opened with a recovery address nominated up front. The contract refused any unwind until the 24 hour window had passed, at 15:30 BST on 29 September. Ten minutes later, a wallet that had never sent a transaction unwound it, and the 50 USDG went to the recovery address, not to the wallet that pressed the button. | [open](https://explorer.testnet.chain.robinhood.com/tx/0x1fa994e04fea8a82ab3550a12529f2c6c2907911e5eeede870ff527680265bfe) · [unwind](https://explorer.testnet.chain.robinhood.com/tx/0xc814cc0a80e0900b8d5bba01b87f2dd10b27601fd71d959a13103f398def6444) |
 
 Order 2 is the whole argument in one transaction. If the funder had been screened, the funds would still come home, because recovery never needed the funder to send anything.
 
@@ -221,6 +221,7 @@ Every number and address above can be checked rather than believed. This table i
 | USDG is at that address and is six decimals | `cast call 0x7E955252E15c84f5768B83c41a71F9eba181802F "decimals()(uint8)" --rpc-url https://rpc.testnet.chain.robinhood.com` | `6` |
 | Every address in the registry still matches the chain | `FOUNDRY_PROFILE=fork ROBINHOOD_RPC=https://rpc.testnet.chain.robinhood.com forge test --match-path test/Fork.t.sol` | 3 passing |
 | The contract's own test suite | `cd contracts && forge test` | 46 passing, 4 skipped |
+| A real USDG order was unwound by a stranger | `cast call 0x71029fac49E9b45CCC377812aEc01509FFD383A1 "statusOf(bytes32)(uint8)" 0x7fb40dea2f7e756989161f233dc86cd0a83d6e98b9558c1e460e20d7a351cc90 --rpc-url https://rpc.testnet.chain.robinhood.com` | `3`, which is Unwound. The [unwind](https://explorer.testnet.chain.robinhood.com/tx/0xc814cc0a80e0900b8d5bba01b87f2dd10b27601fd71d959a13103f398def6444) was sent from `0xFE9A…0548`, and the 50 USDG sits at the recovery address `0x5565…ba11a`. |
 | A real USDG order settled | `cast call 0x71029fac49E9b45CCC377812aEc01509FFD383A1 "statusOf(bytes32)(uint8)" 0xfad69ced7f9b1bf95844435440a669de0644dfbf7a378f571f412529e599acee --rpc-url https://rpc.testnet.chain.robinhood.com` | `2`, which is Settled |
 | The console's own test suite | `cd web && npm test` | 26 passing |
 | Mainnet's filter refused a real transfer | `cast call 0x0000000000000000000000000000000000000074 "isTransactionFiltered(bytes32)(bool)" 0x3557fe4ab79553ae32f49af938d6596335aa42d68742bdfc73490d2261e3dbf5 --rpc-url https://rpc.mainnet.chain.robinhood.com` | `true`. The receipt for that hash shows it included and failed. |

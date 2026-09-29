@@ -23,8 +23,11 @@ export const LIVE_ORDERS = [
   {
     label: 'Order 2',
     ref: '0x7fb40dea2f7e756989161f233dc86cd0a83d6e98b9558c1e460e20d7a351cc90',
-    story: 'Recovery address named up front. After the 24 hour window, a wallet that never touched the order unwinds it, and the USDG goes to the recovery address.',
-    txs: [['open', '0x1fa994e04fea8a82ab3550a12529f2c6c2907911e5eeede870ff527680265bfe']],
+    story: 'Recovery address named up front. After the 24 hour window, a wallet that had never sent a transaction unwound it, and the USDG went to the recovery address.',
+    txs: [
+      ['open', '0x1fa994e04fea8a82ab3550a12529f2c6c2907911e5eeede870ff527680265bfe'],
+      ['unwind', '0xc814cc0a80e0900b8d5bba01b87f2dd10b27601fd71d959a13103f398def6444'],
+    ],
   },
 ];
 
