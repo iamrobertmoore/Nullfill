@@ -334,6 +334,7 @@ h2 em { color: var(--signal); }
 }
 .lane .seq { left: 36%; }
 .lane .blk { right: 10px; }
+.fate[data-fate="late"] .seq { left: 30%; line-height: 1.15; text-align: center; padding: 4px 7px; }
 .lane .clock { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); font: 600 10.5px var(--mono); color: var(--signal); }
 .lane .tx {
   position: absolute; top: 50%; left: 12px; width: 14px; height: 14px; margin-top: -7px;
@@ -367,8 +368,8 @@ h2 em { color: var(--signal); }
 }
 @keyframes go-late {
   0% { left: 12px; opacity: 0; } 8% { opacity: 1; }
-  45% { left: 44%; }
-  55% { left: 44%; }
+  45% { left: calc(30% - 20px); }
+  58% { left: calc(30% - 20px); }
   78% { left: calc(100% - 44px); background: var(--brand); }
   88%, 100% { left: calc(100% - 44px); background: var(--bad); opacity: 0; }
 }
