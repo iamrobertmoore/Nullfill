@@ -303,9 +303,9 @@ contract RobinhoodChainTest is Test {
     /// arrived. With a token that keeps a fee on transfer, the order is recorded whole while the escrow
     /// holds one percent less, and a second order in the same token would cover the shortfall.
     ///
-    /// No asset this entry settles in behaves like that: USDG and the five testnet equities transfer
+    /// No asset this project settles in behaves like that: USDG and the five testnet equities transfer
     /// exactly. So the fix, a balance delta check in `open`, is held for the next deployment rather
-    /// than redeployed inside the last week of the buildathon, when the contract was frozen. This test
+    /// than redeployed while the contract was frozen. This test
     /// exists so the limitation is stated by the suite, not only in prose. When the guard ships, this
     /// test is expected to fail, and it gets replaced by one that expects the revert.
     function test_KnownLimitation_FeeOnTransferTokenIsRecordedWhole() public {

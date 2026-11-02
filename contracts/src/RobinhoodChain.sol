@@ -45,7 +45,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 ///      Nothing here is a token list. It is the small set of addresses this project has actually
 ///      verified, plus the machinery to fail loudly on an unknown chain rather than guess.
 library RobinhoodChain {
-    /// @notice Robinhood Chain testnet. The chain this entry is deployed to.
+    /// @notice Robinhood Chain testnet. The chain this project is deployed to.
     uint256 internal constant TESTNET = 46630;
 
     /// @notice Robinhood Chain mainnet.

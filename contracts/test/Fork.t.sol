@@ -18,7 +18,7 @@ import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IER
 ///          forge test --match-path test/Fork.t.sol -vv
 ///
 ///      The `fork` profile raises the EVM version to Cancun, and it is required rather than optional.
-///      The live tokens were compiled with PUSH0, and the entry's own deployment target of Paris
+///      The live tokens were compiled with PUSH0, and the project's own deployment target of Paris
 ///      refuses that instruction. Without the profile every call to a real token fails with
 ///      `EvmError: NotActivated`, which reads like a broken test rather than an EVM setting.
 ///
@@ -77,7 +77,7 @@ contract ForkTest is Test {
         }
     }
 
-    /// The entry's own deployment, checked the same way a reviewer would: read it back off the chain
+    /// The project's own deployment, checked the same way a reviewer would: read it back off the chain
     /// rather than trusting the broadcast log.
     function test_Fork_TheDeployedContractIsStillThereAndStillSaysTwentyFourHours() public {
         _requireFork();

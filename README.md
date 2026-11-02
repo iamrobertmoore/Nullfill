@@ -2,7 +2,7 @@
 
 <p align="center"><strong>An escrow for tokenised equities that stays correct when a transfer is never sequenced at all.</strong></p>
 
-<p align="center"><a href="https://iamrobertmoore.github.io/Nullfill/">Open the settlement console</a> · <a href="https://iamrobertmoore.github.io/Nullfill/#classifier">Classify a transaction</a> · <a href="https://explorer.testnet.chain.robinhood.com/address/0x71029fac49E9b45CCC377812aEc01509FFD383A1">Deployed contract</a> · <a href="contracts/src/Nullfill.sol">Read the contract</a> · <a href="https://iamrobertmoore.github.io/Nullfill/deck/">Pitch deck</a></p>
+<p align="center"><a href="https://iamrobertmoore.github.io/Nullfill/">Open the settlement console</a> · <a href="https://iamrobertmoore.github.io/Nullfill/#classifier">Classify a transaction</a> · <a href="https://explorer.testnet.chain.robinhood.com/address/0x71029fac49E9b45CCC377812aEc01509FFD383A1">Deployed contract</a> · <a href="contracts/src/Nullfill.sol">Read the contract</a></p>
 
 Ines runs settlement at a six-person desk that quotes tokenised equities on Robinhood Chain. Trades settle in escrow: her desk puts up the stock tokens, the counterparty puts up the cash, and the contract releases both when the trade completes.
 
@@ -39,15 +39,15 @@ Two orders, 50 USDG each, from the Paxos testnet faucet, through the deployed co
 
 Order 2 is the whole argument in one transaction. If the funder had been screened, the funds would still come home, because recovery never needed the funder to send anything.
 
-## I checked the settlement contracts in this buildathon
+## I checked the settlement contracts on Robinhood Chain
 
-Seventeen projects in this buildathon's field hold user funds on Robinhood Chain while they wait for something: a repayment, an expiry, a claim. I could find public contract source for eight of them, so I read those eight, one function at a time.
+Seventeen projects I surveyed hold user funds on Robinhood Chain while they wait for something: a repayment, an expiry, a claim. I could find public contract source for eight of them, so I read those eight, one function at a time.
 
 - **None of the 8** has any logic for a transaction that is rejected at the sequencer.
 - **3 of the 8** move value because a transaction did not arrive by a deadline, and in **2** of those the deadline can be set shorter than 24 hours, inside the window in which the missing transaction can still arrive.
 - **1 of the 8** floors its grace period at 24 hours, and says why in a comment: so an outage cannot cost a borrower their collateral. That is the same window Nullfill enforces, arrived at independently.
 
-I am not naming anyone. These are other builders' entries, not bugs to report in public, and the point is the pattern: on this chain, "no transaction arrived" is treated as a decision almost everywhere, and it is not one.
+I am not naming anyone. These are other builders' projects, not bugs to report in public, and the point is the pattern: on this chain, "no transaction arrived" is treated as a decision almost everywhere, and it is not one.
 
 ## The problem, in the chain's own words
 
@@ -134,7 +134,7 @@ Two limits, stated rather than discovered.
 
 Six limits, stated here rather than discovered by a reviewer.
 
-**The deployed escrow assumes the token transfers exactly.** `open()` records the amount it was asked to escrow and does not measure what arrived. A token that keeps a fee on transfer would leave that order recorded whole while the escrow held less. USDG and the five testnet equities all transfer exactly, so nothing this entry settles in is affected. The fix, a balance delta check, is written and tested, and it ships with the next deployment rather than a redeploy in the last week of the buildathon. [`test/RobinhoodChain.t.sol`](contracts/test/RobinhoodChain.t.sol) pins the current behaviour down so the limit is stated by the suite as well as here.
+**The deployed escrow assumes the token transfers exactly.** `open()` records the amount it was asked to escrow and does not measure what arrived. A token that keeps a fee on transfer would leave that order recorded whole while the escrow held less. USDG and the five testnet equities all transfer exactly, so nothing this project settles in is affected. The fix, a balance delta check, is written and tested, and it ships with the next deployment rather than a redeploy while the contract was frozen. [`test/RobinhoodChain.t.sol`](contracts/test/RobinhoodChain.t.sol) pins the current behaviour down so the limit is stated by the suite as well as here.
 
 **The chain only records some refusals.** A filtered transaction that comes in through the delayed inbox is included, failed, and listed in the registry at `0x74`, so the console can name it. One refused at the sequencer's door is recorded nowhere.
 
@@ -202,11 +202,11 @@ DEMO_ACTION=status forge script script/Demo.s.sol:Demo --rpc-url $RPC --sender 0
 
 The mechanism is not mine. Arbitrum documents compliance filtering, Robinhood Chain documents that it is on, and Chainstack Labs publishes a sequencer feed decoder that names the same failure in its own risk warnings. None of that is a claim to novelty, and the honest version of this section names what already exists.
 
-**Idempotent escrow already exists.** Paylock, built on Arbitrum Sepolia during this buildathon, rejects a second payment against a settled invoice with `already_settled`. Replay protection has been arrived at independently by more than one entry in this field, so it is not a differentiator, and this README does not lead with it. It appears here as one of four consequences of keying orders by an external reference.
+**Idempotent escrow already exists.** At least one escrow on Arbitrum Sepolia rejects a second payment against a settled invoice with `already_settled`. Replay protection has been arrived at independently more than once, so it is not a differentiator, and this README does not lead with it. It appears here as one of four consequences of keying orders by an external reference.
 
-**Deadline based release already exists.** Stagepay releases escrowed milestones to a freelancer when a review window passes in silence, and its suite fuzzes fund conservation over 2,000 runs. Nullfill has the same shape and the same test discipline, and the difference is the argument rather than the mechanism. Silence past a deadline is treated there as a decision. The claim here is that on this chain an absent transaction is not a decision, and acting on it before the force inclusion window closes is the bug.
+**Deadline based release already exists.** Milestone escrows release funds to a freelancer when a review window passes in silence, and at least one fuzzes fund conservation over thousands of runs. Nullfill has the same shape and the same test discipline, and the difference is the argument rather than the mechanism. Silence past a deadline is treated there as a decision. The claim here is that on this chain an absent transaction is not a decision, and acting on it before the force inclusion window closes is the bug.
 
-**What does not exist** is anything that treats non-inclusion as a first class settlement outcome. A keyword sweep of the 105 projects in this buildathon's field on 30 September 2026 returns zero hits for `force inclusion`, `non-inclusion`, `restricted address`, `censorship` and `settlement finality`. One other entry works with the compliance filter, reading the same registry to verify corporate action updates. None treats a missing transaction as a settlement outcome. Every escrow on every chain assumes a submitted transaction either lands or reverts. This one handles the third case, where it never happened, and names the two things that follow: recovery must not depend on the screened party transacting, and no deadline may sit inside the force inclusion window.
+**What does not exist** is anything that treats non-inclusion as a first class settlement outcome. A keyword sweep of 105 comparable projects on 30 September 2026 returns zero hits for `force inclusion`, `non-inclusion`, `restricted address`, `censorship` and `settlement finality`. One other project works with the compliance filter, reading the same registry to verify corporate action updates. None treats a missing transaction as a settlement outcome. Every escrow on every chain assumes a submitted transaction either lands or reverts. This one handles the third case, where it never happened, and names the two things that follow: recovery must not depend on the screened party transacting, and no deadline may sit inside the force inclusion window.
 
 That is the claim. It is narrower than "nobody has thought about compliance on this chain", which would be false, and it is the one the code supports.
 
@@ -245,13 +245,13 @@ Claims this repository published and then changed. Kept because a correction is 
 
 **28 September 2026.** The test count above said 29. It was 29 when written and 44 by the time anyone read it, because a second test file was added. A count is only meaningful with a date attached, and it had none.
 
-**28 September 2026.** The deposit path accepts an amount without checking what arrived, so a fee on transfer token would leave one order able to spend another order's balance. Found while writing the USDG tests. I wrote the fix, a balance delta check, and then took it back out of this repository, because shipping it meant redeploying the contract in the last week of the buildathon and the repository would otherwise no longer match its own deployment. The limit is now stated under "What this will not claim", pinned by a test, and the fix ships with the next deployment.
+**28 September 2026.** The deposit path accepts an amount without checking what arrived, so a fee on transfer token would leave one order able to spend another order's balance. Found while writing the USDG tests. I wrote the fix, a balance delta check, and then took it back out of this repository, because shipping it meant redeploying a frozen contract and the repository would otherwise no longer match its own deployment. The limit is now stated under "What this will not claim", pinned by a test, and the fix ships with the next deployment.
 
 **28 September 2026.** An earlier version of this README said the route to testnet USDG was undocumented. It is documented: Paxos runs a testnet faucet that covers Robinhood Chain, 100 USDG per wallet per day. The two live orders above were funded from it.
 
 ## Who pays, and where this goes next
 
-**Who it is for.** Anyone holding funds on Robinhood Chain against a future event: OTC desks settling tokenised equities against USDG, lending protocols with a repayment deadline, protection notes with an expiry, savings pools with a payout date. The survey above found eight such contracts in one buildathon alone.
+**Who it is for.** Anyone holding funds on Robinhood Chain against a future event: OTC desks settling tokenised equities against USDG, lending protocols with a repayment deadline, protection notes with an expiry, savings pools with a payout date. The survey above found eight such contracts on this one chain.
 
 **What stays free.** The escrow. It is MIT licensed, has no owner and no fee, and any team can deploy it or copy the three rules into their own contract: recovery never depends on one party transacting, the refund address is named up front, and no deadline sits inside the 24 hour window.
 
@@ -273,4 +273,4 @@ Every claim above is quoted from a primary source, checked on 15 September 2026.
 - Arbitrum, [Compliance filtering](https://docs.arbitrum.io/launch-arbitrum-chain/chain-config/sequencer/compliance-filtering) configuration reference, the address list schema
 - Robinhood Chain, [About](https://docs.robinhood.com/chain/), the ecosystem partner list
 
-Built for the Arbitrum Open House Singapore online buildathon.
+Built by Robert Moore. MIT licensed.
